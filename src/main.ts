@@ -40,7 +40,7 @@ function handleProcessClick(): void {
   const file = fileInput.files?.[0];
   const startDateColIndex = parseInt(startDateColInput.value || "NaN", 10) - 1; // 0-based
   const endDateColIndex = parseInt(endDateColInput.value || "NaN", 10) - 1; // 0-based
-  let maxDaysLimit = parseInt(maxDaysLimitInput.value || "100", 10); // Get limit, default 100
+  let maxDaysLimit = parseInt(maxDaysLimitInput.value || "365", 10); // Get limit, default 365
 
   // 3. Validate inputs
   if (!file) {
@@ -65,9 +65,9 @@ function handleProcessClick(): void {
   }
   if (isNaN(maxDaysLimit) || maxDaysLimit <= 0) {
     // Defaulting instead of showing error, could be changed
-    console.warn("展開行数上限が無効なため、デフォルト値 100 を使用します。");
-    maxDaysLimit = 100;
-    maxDaysLimitInput.value = "100"; // Update input field as well
+    console.warn("展開行数上限が無効なため、デフォルト値 365 を使用します。");
+    maxDaysLimit = 365;
+    maxDaysLimitInput.value = "365"; // Update input field as well
     // showError("展開行数上限には正の整数を入力してください。");
     // setProcessButtonState(false); return;
   }
@@ -174,7 +174,8 @@ function handleProcessClick(): void {
       let skippedRowCount = 0;
       let invalidDateRowCount = 0;
       let invalidRangeRowCount = 0;
-      let limitExceededRowCount = 0;
+      // let limitExceededRowCount = 0; // Removed: Replaced by truncationRowCount
+      let truncationRowCount = 0; // Added: Counter for truncated rows
       const detailedWarnings: DetailedWarning[] = []; // Added: Array to store detailed warnings
 
       originalDataRows.forEach((row, rowIndex) => {
@@ -227,48 +228,60 @@ function handleProcessClick(): void {
           return;
         }
 
-        // Check day limit
+        // Calculate total days for potential warning message later
         const dayDifference = (endDate.getTime() - startDate.getTime()) /
           (1000 * 60 * 60 * 24); // Difference in days
-        const numberOfExpandedRows = dayDifference + 1;
+        const totalDaysToExpand = dayDifference + 1;
 
-        if (numberOfExpandedRows > maxDaysLimit) {
-          limitExceededRowCount++;
-          detailedWarnings.push({ // Added: Store detailed warning
-            rowNumber: rowNumberForError,
-            type: "上限超過",
-            message:
-              `展開行数 (${numberOfExpandedRows}日) が上限 (${maxDaysLimit}日) を超えています (開始: ${
-                formatDate(startDate)
-              }, 終了: ${formatDate(endDate)})。`,
-          });
-          return;
-        }
-
-        // Iterate from start date to end date (inclusive), using UTC dates
+        // Iterate from start date to end date (inclusive), up to maxDaysLimit
         let currentDate = new Date(startDate.getTime()); // Clone start date
         const finalEndDate = new Date(endDate.getTime()); // Clone end date
+        let expandedCount = 0; // Counter for expanded rows for this original row
+        let truncated = false; // Flag if truncation occurred
 
+        // Safety break remains, but primary limit is expandedCount < maxDaysLimit
         let loopCount = 0;
-        const maxLoops = maxDaysLimit + 10; // Safety break
+        // Adjust safety break based on total days, ensuring it's at least maxDaysLimit + buffer
+        const maxLoops = Math.max(totalDaysToExpand + 10, maxDaysLimit + 10);
 
         while (
           currentDate.getTime() <= finalEndDate.getTime() &&
+          expandedCount < maxDaysLimit && // Check against the limit
           loopCount < maxLoops
         ) {
           const formattedDate = formatDate(currentDate);
           processedRows.push([formattedDate, ...row]);
+          expandedCount++; // Increment counter
 
           // Move to the next day in UTC
           currentDate.setUTCDate(currentDate.getUTCDate() + 1);
           loopCount++;
         }
-        if (loopCount >= maxLoops) {
+
+        // Check if the loop was terminated by the limit (and not by reaching the end date or safety break)
+        if (
+          expandedCount === maxDaysLimit && // Reached the limit
+          currentDate.getTime() <= finalEndDate.getTime() && // Still more days to process potentially
+          loopCount < maxLoops // Safety break not hit
+        ) {
+          truncated = true;
+          truncationRowCount++; // Increment global counter for summary
+          detailedWarnings.push({
+            rowNumber: rowNumberForError,
+            type: "上限による打ち切り",
+            message: `展開行数が上限 (${maxDaysLimit}日) に達したため、${
+              formatDate(currentDate) // Show the date it stopped at
+            } 以降の展開を打ち切りました (本来の終了日: ${
+              formatDate(endDate)
+            }, 全 ${totalDaysToExpand}日)。`,
+          });
+        } else if (loopCount >= maxLoops) {
+          // Handle safety break scenario (less likely but possible)
           console.error(
             `行 ${rowNumberForError}: 日付展開ループが予期せず最大回数 (${maxLoops}) に達しました。スキップします。`,
           );
-          invalidRangeRowCount++; // Count as a range issue
-          detailedWarnings.push({ // Added: Store detailed warning
+          invalidRangeRowCount++; // Count as a range issue for summary
+          detailedWarnings.push({
             rowNumber: rowNumberForError,
             type: "処理エラー",
             message:
@@ -278,8 +291,9 @@ function handleProcessClick(): void {
       }); // End of originalDataRows.forEach
 
       // 6. Handle results and feedback
+      // Calculate total skipped rows (excluding truncations, as they still produce output)
       const totalSkipped = invalidDateRowCount + invalidRangeRowCount +
-        skippedRowCount + limitExceededRowCount;
+        skippedRowCount;
       const warningsSummary: WarningInfo[] = []; // Renamed from warnings
       if (invalidDateRowCount > 0) {
         warningsSummary.push({
@@ -288,18 +302,20 @@ function handleProcessClick(): void {
         });
       }
       if (invalidRangeRowCount > 0) {
+        // Includes safety break errors now
         warningsSummary.push({
-          type: "日付範囲エラー",
+          type: "日付範囲/処理エラー", // Combine for summary
           count: invalidRangeRowCount,
         });
       }
       if (skippedRowCount > 0) {
         warningsSummary.push({ type: "列数不足", count: skippedRowCount });
       }
-      if (limitExceededRowCount > 0) {
+      // Add the new truncation warning to the summary
+      if (truncationRowCount > 0) {
         warningsSummary.push({
-          type: "上限超過",
-          count: limitExceededRowCount,
+          type: "上限による打ち切り",
+          count: truncationRowCount,
         });
       }
 
