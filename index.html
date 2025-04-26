@@ -1,65 +1,102 @@
 <!DOCTYPE html>
 <html lang="ja">
-
-<head>
+  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CSV 日付展開ツール</title>
     <!-- CSSはビルド時にインライン化される -->
     <link rel="stylesheet" href="./src/style.css">
-</head>
+  </head>
 
-<body>
+  <body>
     <div class="container">
-        <h1>CSV 日付展開ツール</h1>
+      <h1>CSV 日付展開ツール</h1>
 
-        <div class="usage-guide">
-            <h2>使い方</h2>
-            <ol class="usage-list">
-                <li>下の「CSVファイルを選択」ボタンをクリックし、処理したいCSVファイルを選びます。</li>
-                <li>「開始日の列番号」と「終了日の列番号」に、それぞれ該当する列の番号（1から始まる番号）を入力します。</li>
-                <li>(オプション) 「展開行数上限」に、1つの元データ行から展開できる最大日数を指定します（デフォルト: 100）。</li>
-                <li>「処理実行」ボタンをクリックします。</li>
-                <li>処理が完了すると、「結果をダウンロード (CSV)」ボタンが表示されます。</li>
-                <li>ダウンロードボタンをクリックすると、展開されたデータを含むCSVファイルが保存されます。</li>
-            </ol>
-            <p class="note">
-                注意: CSVの1行目はヘッダー行として扱われます。日付は "YYYY/MM/DD" 形式で出力され、先頭列のヘッダーは "EXPANDDATE" となります。
-            </p>
+      <div class="usage-guide">
+        <h2>使い方</h2>
+        <ol class="usage-list">
+          <li>
+            下の「CSVファイルを選択」ボタンをクリックし、処理したいCSVファイルを選びます。
+          </li>
+          <li>
+            「開始日の列番号」と「終了日の列番号」に、それぞれ該当する列の番号（1から始まる番号）を入力します。
+          </li>
+          <li>
+            (オプション)
+            「展開行数上限」に、1つの元データ行から展開できる最大日数を指定します（デフォルト:
+            100）。
+          </li>
+          <li>「処理実行」ボタンをクリックします。</li>
+          <li>
+            処理が完了すると、「結果をダウンロード (CSV)」ボタンが表示されます。
+          </li>
+          <li>
+            ダウンロードボタンをクリックすると、展開されたデータを含むCSVファイルが保存されます。
+          </li>
+        </ol>
+        <p class="note">
+          注意: CSVの1行目はヘッダー行として扱われます。日付は "YYYY/MM/DD"
+          形式で出力され、先頭列のヘッダーは "EXPANDDATE" となります。
+        </p>
+      </div>
+
+      <div class="input-group">
+        <label for="csvFile">1. CSVファイルを選択:</label>
+        <input type="file" id="csvFile" accept=".csv">
+      </div>
+
+      <div class="input-grid">
+        <div>
+          <label for="startDateCol">2. 開始日の列番号:</label>
+          <input
+            type="number"
+            id="startDateCol"
+            min="1"
+            value="2"
+            placeholder="例: 2"
+          >
         </div>
-
-        <div class="input-group">
-            <label for="csvFile">1. CSVファイルを選択:</label>
-            <input type="file" id="csvFile" accept=".csv">
+        <div>
+          <label for="endDateCol">3. 終了日の列番号:</label>
+          <input
+            type="number"
+            id="endDateCol"
+            min="1"
+            value="3"
+            placeholder="例: 3"
+          >
         </div>
-
-        <div class="input-grid">
-            <div>
-                <label for="startDateCol">2. 開始日の列番号:</label>
-                <input type="number" id="startDateCol" min="1" value="2" placeholder="例: 2">
-            </div>
-            <div>
-                <label for="endDateCol">3. 終了日の列番号:</label>
-                <input type="number" id="endDateCol" min="1" value="3" placeholder="例: 3">
-            </div>
-            <div>
-                <label for="maxDaysLimit">4. 展開行数上限:</label>
-                <input type="number" id="maxDaysLimit" min="1" value="100" placeholder="例: 100">
-            </div>
+        <div>
+          <label for="maxDaysLimit">4. 展開行数上限:</label>
+          <input
+            type="number"
+            id="maxDaysLimit"
+            min="1"
+            value="100"
+            placeholder="例: 100"
+          >
         </div>
+      </div>
 
-        <button id="processBtn">処理実行</button>
+      <button id="processBtn">処理実行</button>
 
-        <div id="status" class="status-message hidden"></div>
-        <div id="error" class="error-message hidden"></div>
+      <div id="status" class="status-message hidden"></div>
+      <div id="error" class="error-message hidden"></div>
 
-        <div id="downloadContainer" class="download-area hidden">
-            <button id="downloadBtn">結果をダウンロード (CSV)</button>
-        </div>
+      <!-- Warning Details Area -->
+      <div id="warningDetails" class="warning-details-area hidden">
+        <h3>スキップされた行の詳細:</h3>
+        <ul id="warningList">
+          <!-- Warning details will be added here by JavaScript -->
+        </ul>
+      </div>
+
+      <div id="downloadContainer" class="download-area hidden">
+        <button id="downloadBtn">結果をダウンロード (CSV)</button>
+      </div>
     </div>
 
     <!-- JavaScriptはビルド時にインライン化される -->
     <script type="module" src="./src/main.js"></script>
-</body>
-
+  </body>
 </html>
