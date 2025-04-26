@@ -9,11 +9,11 @@ function getElementByIdOrThrow<T extends HTMLElement>(id: string): T {
 
 // --- DOM Element References ---
 export const fileInput = getElementByIdOrThrow<HTMLInputElement>("csvFile");
-export const startDateColInput = getElementByIdOrThrow<HTMLInputElement>(
-  "startDateCol",
+export const startDateColSelect = getElementByIdOrThrow<HTMLSelectElement>(
+  "startDateColSelect",
 );
-export const endDateColInput = getElementByIdOrThrow<HTMLInputElement>(
-  "endDateCol",
+export const endDateColSelect = getElementByIdOrThrow<HTMLSelectElement>(
+  "endDateColSelect",
 );
 export const maxDaysLimitInput = getElementByIdOrThrow<HTMLInputElement>(
   "maxDaysLimit",
@@ -58,6 +58,54 @@ export interface DetailedWarning {
 }
 
 // --- UI Update Functions ---
+
+/**
+ * Populates the column select dropdowns with options from the CSV header.
+ * @param columns - An array of column names (header values).
+ */
+export function populateColumnSelectors(columns: string[]): void {
+  // Clear existing options except the first placeholder
+  startDateColSelect.innerHTML = '<option value="">開始日の列を選択</option>';
+  endDateColSelect.innerHTML = '<option value="">終了日の列を選択</option>';
+
+  if (columns && columns.length > 0) {
+    columns.forEach((colName, index) => {
+      // Use column name as value, or index if name is empty/duplicate?
+      // For simplicity, let's use the column name as value for now.
+      // Need to handle potential duplicate column names later if necessary.
+      // For now, assume unique names or first match is sufficient.
+      const option = document.createElement("option");
+      option.value = colName; // Use column name as value
+      option.textContent = colName; // Display column name
+
+      startDateColSelect.appendChild(option.cloneNode(true)); // Clone for the second select
+      endDateColSelect.appendChild(option);
+    });
+  }
+}
+
+/**
+ * Resets the column select dropdowns to their initial state.
+ */
+export function resetColumnSelectors(): void {
+  startDateColSelect.innerHTML =
+    '<option value="">ファイルを選択してください</option>';
+  endDateColSelect.innerHTML =
+    '<option value="">ファイルを選択してください</option>';
+}
+
+/**
+ * Gets the currently selected column names from the dropdowns.
+ * @returns An object containing the selected start and end column names, or null if not selected.
+ */
+export function getSelectedColumnNames(): {
+  start: string | null;
+  end: string | null;
+} {
+  const start = startDateColSelect.value || null;
+  const end = endDateColSelect.value || null;
+  return { start, end };
+}
 
 /** Displays the selected file name. */
 export function showSelectedFileName(fileName: string): void {
