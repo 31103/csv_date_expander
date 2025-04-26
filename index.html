@@ -192,16 +192,12 @@
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-
-        <section class="step-card" id="step3">
-          <div class="step-header">
-            <div class="step-number">3</div>
-            <h2 class="step-title">処理と結果</h2>
-          </div>
-          <div class="step-content">
-            <button id="processBtn" class="primary-button">
+            <!-- 処理実行ボタンをここに移動 -->
+            <button
+              id="processBtn"
+              class="primary-button"
+              style="margin-top: var(--spacing-lg)"
+            >
               <span class="button-icon">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -218,7 +214,16 @@
               </span>
               処理実行
             </button>
+          </div>
+        </section>
 
+        <section class="step-card" id="step3">
+          <div class="step-header">
+            <div class="step-number">3</div>
+            <h2 class="step-title">処理と結果</h2>
+          </div>
+          <div class="step-content">
+            <!-- 処理実行ボタンはstep2に移動 -->
             <div id="processingIndicator" class="processing-indicator hidden">
               <div class="spinner"></div>
               <span>処理中...</span>
