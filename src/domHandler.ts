@@ -206,9 +206,6 @@ export function showStatusWithWarnings(
   statusDiv.textContent = messageText; // Use textContent for simple status
   statusDiv.classList.remove("hidden");
   clearError(); // Clear any previous errors when showing status
-
-  // 結果サマリーも表示
-  showResultSummary(messageText, warnings.length > 0 ? "warning" : "success");
 }
 
 /** Hides the status message area. */
