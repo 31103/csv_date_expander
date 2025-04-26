@@ -205,12 +205,10 @@ async function processFile(file: File): Promise<void> {
       const newHeader = ["EXPANDDATE", ...originalHeader];
       processedCsvString = generateCSV(newHeader, processedRows);
       showDownloadArea();
-      showStatusWithWarnings(baseMessage, warningsSummary); // Statusのみ更新 (domHandler側で修正後)
-      showResultSummary(
-        baseMessage,
-        warningsSummary.length > 0 ? "warning" : "success",
-      ); // Summaryを明示的に表示
-      showWarningDetails(detailedWarnings);
+      // 成功時はResultSummaryのみ表示し、Statusは隠す
+      clearStatus(); // Ensure status is hidden on pure success
+      showResultSummary(baseMessage, "success");
+      showWarningDetails(detailedWarnings); // Show warnings even on success if any
       // 結果セクションを表示
       if (step3) step3.classList.remove("hidden");
     } else {
@@ -220,7 +218,8 @@ async function processFile(file: File): Promise<void> {
         showError(
           "処理できる有効なデータがありませんでした。詳細は下の警告リストを確認してください。",
         );
-        showStatusWithWarnings("処理結果なし。", warningsSummary); // Statusのみ更新 (domHandler側で修正後)
+        // エラー時はStatusとResultSummaryの両方を表示する可能性あり
+        showStatusWithWarnings("処理結果なし。", warningsSummary); // Show warning details in status
         showWarningDetails(detailedWarnings);
         // エラーの場合は結果サマリーをエラー表示
         showResultSummary(
@@ -233,6 +232,7 @@ async function processFile(file: File): Promise<void> {
         showError(
           "有効な日付範囲を持つデータ行が見つかりませんでした。入力ファイル、列名、上限値を確認してください。",
         );
+        clearStatus(); // Hide status if no specific warnings to show
         // エラーの場合は結果サマリーをエラー表示
         showResultSummary(
           "有効な日付範囲を持つデータ行が見つかりませんでした。",
