@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 import { formatDate, parseDate } from "./dateUtils.ts";
 import { generateCSV, parseCSV } from "./csvParser.ts";
 import {
@@ -79,6 +80,10 @@ async function updateSelectedFile(file: File | null): Promise<void> {
       // Store parsed data for later use in processFile
       parsedCsvData = { header: header, dataRows: data.slice(1) };
 
+      // 設定セクションを表示
+      const step2 = document.getElementById("step2");
+      if (step2) step2.classList.remove("hidden");
+
       // 処理中インジケーターを非表示
       hideProcessingIndicator();
     } catch (error) {
@@ -113,6 +118,9 @@ async function processFile(file: File): Promise<void> {
   hideDownloadArea();
   hideWarningDetailsArea();
   hideResultSummary(); // 結果サマリーを非表示
+  // 結果セクションはまだ表示しない
+  const step3 = document.getElementById("step3");
+  if (step3) step3.classList.add("hidden");
   processedCsvString = "";
   setProcessButtonState(true); // これにより処理中インジケーターも表示される
 
@@ -197,8 +205,14 @@ async function processFile(file: File): Promise<void> {
       const newHeader = ["EXPANDDATE", ...originalHeader];
       processedCsvString = generateCSV(newHeader, processedRows);
       showDownloadArea();
-      showStatusWithWarnings(baseMessage, warningsSummary);
+      showStatusWithWarnings(baseMessage, warningsSummary); // Statusのみ更新 (domHandler側で修正後)
+      showResultSummary(
+        baseMessage,
+        warningsSummary.length > 0 ? "warning" : "success",
+      ); // Summaryを明示的に表示
       showWarningDetails(detailedWarnings);
+      // 結果セクションを表示
+      if (step3) step3.classList.remove("hidden");
     } else {
       // Determine why no rows were generated
       const totalSkipped = warningsSummary.reduce((sum, w) => sum + w.count, 0); // Approx total skipped
@@ -206,13 +220,15 @@ async function processFile(file: File): Promise<void> {
         showError(
           "処理できる有効なデータがありませんでした。詳細は下の警告リストを確認してください。",
         );
-        showStatusWithWarnings("処理結果なし。", warningsSummary);
+        showStatusWithWarnings("処理結果なし。", warningsSummary); // Statusのみ更新 (domHandler側で修正後)
         showWarningDetails(detailedWarnings);
         // エラーの場合は結果サマリーをエラー表示
         showResultSummary(
           "処理できる有効なデータがありませんでした。",
           "error",
         );
+        // 結果セクションを表示 (エラーでも表示する)
+        if (step3) step3.classList.remove("hidden");
       } else {
         showError(
           "有効な日付範囲を持つデータ行が見つかりませんでした。入力ファイル、列名、上限値を確認してください。",
@@ -222,6 +238,8 @@ async function processFile(file: File): Promise<void> {
           "有効な日付範囲を持つデータ行が見つかりませんでした。",
           "error",
         );
+        // 結果セクションを表示 (エラーでも表示する)
+        if (step3) step3.classList.remove("hidden");
       }
       // No download area shown if no rows processed
     }
@@ -234,6 +252,8 @@ async function processFile(file: File): Promise<void> {
     );
     // エラーの場合は結果サマリーをエラー表示
     showResultSummary("処理中にエラーが発生しました。", "error");
+    // 結果セクションを表示 (エラーでも表示する)
+    if (step3) step3.classList.remove("hidden");
   } finally {
     setProcessButtonState(false); // Ensure button is re-enabled and processing indicator is hidden
   }
@@ -539,3 +559,22 @@ setupEventListeners(
 );
 
 console.log("CSV Date Expander Initialized (TypeScript Version)");
+
+// --- Initial UI State ---
+function initializeUI() {
+  const step2 = document.getElementById("step2");
+  const step3 = document.getElementById("step3");
+  if (step2) step2.classList.add("hidden");
+  if (step3) step3.classList.add("hidden");
+  hideDownloadArea();
+  hideProcessingIndicator();
+  hideResultSummary();
+  hideWarningDetailsArea();
+  clearError();
+  clearStatus();
+  clearSelectedFileName();
+  resetColumnSelectors();
+}
+
+// --- Initialize ---
+initializeUI();
