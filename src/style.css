@@ -243,3 +243,33 @@ button:disabled {
 .hidden {
   display: none;
 }
+
+/* Drag and Drop Area Styles */
+#fileDropArea {
+  border: 2px dashed #ccc;
+  padding: 20px;
+  text-align: center;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  margin-top: 1em; /* Add some space above */
+  background-color: #f9f9f9;
+}
+
+#fileDropArea.dragover {
+  background-color: #e0e0e0;
+  border-color: #aaa;
+}
+
+.drop-prompt {
+  margin-top: 0.5em;
+  font-size: 0.9em;
+  color: #555;
+}
+
+/* Selected File Name Display */
+.selected-file-name {
+  margin-top: 0.5em;
+  font-size: 0.9em;
+  color: #333;
+  font-weight: bold;
+  min-height: 1.2em; /* Reserve space to prevent layout shifts */
+}

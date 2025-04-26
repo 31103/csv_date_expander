@@ -40,9 +40,12 @@
         </p>
       </div>
 
-      <div class="input-group">
+      <div class="input-group" id="fileDropArea">
         <label for="csvFile">1. CSVファイルを選択:</label>
         <input type="file" id="csvFile" accept=".csv">
+        <div id="selectedFileName" class="selected-file-name"></div>
+        <!-- Added for displaying filename -->
+        <p class="drop-prompt">または、ここにCSVファイルをドラッグ＆ドロップ</p>
       </div>
 
       <div class="input-grid">

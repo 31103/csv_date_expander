@@ -35,6 +35,13 @@ export const warningDetailsArea = getElementByIdOrThrow<HTMLDivElement>(
 export const warningList = getElementByIdOrThrow<HTMLUListElement>(
   "warningList",
 ); // Added
+export const selectedFileNameDiv = getElementByIdOrThrow<HTMLDivElement>(
+  "selectedFileName",
+); // Added for displaying filename
+
+export const fileDropArea = getElementByIdOrThrow<HTMLDivElement>(
+  "fileDropArea",
+); // Added for drag & drop
 
 // --- Type Definitions ---
 /** Represents information about a specific type of warning during processing. */
@@ -51,6 +58,18 @@ export interface DetailedWarning {
 }
 
 // --- UI Update Functions ---
+
+/** Displays the selected file name. */
+export function showSelectedFileName(fileName: string): void {
+  selectedFileNameDiv.textContent = `選択中のファイル: ${fileName}`;
+  selectedFileNameDiv.classList.remove("hidden");
+}
+
+/** Clears the displayed selected file name. */
+export function clearSelectedFileName(): void {
+  selectedFileNameDiv.textContent = "";
+  selectedFileNameDiv.classList.add("hidden");
+}
 
 /** Displays an error message. */
 export function showError(message: string): void {
@@ -95,6 +114,8 @@ export function showStatusWithWarnings(
 export function clearStatus(): void {
   statusDiv.textContent = ""; // Clear textContent
   statusDiv.classList.add("hidden");
+  // When status is cleared, also clear selected file name if no file is selected
+  // This logic is now handled in updateSelectedFile in main.ts
 }
 
 /** Shows the download button and container. */
@@ -164,17 +185,59 @@ function escapeHtmlUsingDOM(unsafe: string): string {
   return div.innerHTML;
 }
 
+/**
+ * Sets the visual highlight state for the file drop area.
+ * @param highlight - True to highlight, false to remove highlight.
+ */
+export function setDropAreaHighlight(highlight: boolean): void {
+  if (highlight) {
+    fileDropArea.classList.add("dragover");
+  } else {
+    fileDropArea.classList.remove("dragover");
+  }
+}
+
 // --- Event Listener Setup ---
 
 /**
- * Attaches event listeners to the buttons.
+ * Attaches event listeners to buttons and the drop area.
  * @param processCallback - Function to call when the process button is clicked.
  * @param downloadCallback - Function to call when the download button is clicked.
+ * @param fileDropCallback - Function to call when a file is dropped onto the drop area.
  */
 export function setupEventListeners(
   processCallback: () => void,
   downloadCallback: () => void,
+  fileDropCallback: (file: File) => void, // Added for drag & drop
 ): void {
   processBtn.addEventListener("click", processCallback);
   downloadBtn.addEventListener("click", downloadCallback);
+
+  // Drag and Drop Listeners for fileDropArea
+  fileDropArea.addEventListener("dragover", (event) => {
+    event.preventDefault(); // Necessary to allow drop
+    setDropAreaHighlight(true);
+  });
+
+  fileDropArea.addEventListener("dragleave", () => {
+    setDropAreaHighlight(false);
+  });
+
+  fileDropArea.addEventListener("drop", (event) => {
+    event.preventDefault(); // Prevent default browser behavior (opening file)
+    setDropAreaHighlight(false);
+
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      // Handle only the first file if multiple are dropped
+      const file = files[0];
+      if (
+        file.type === "text/csv" || file.name.toLowerCase().endsWith(".csv")
+      ) {
+        fileDropCallback(file); // Pass the dropped file to the callback
+      } else {
+        showError("CSVファイルのみドロップできます。"); // Show error for non-CSV files
+      }
+    }
+  });
 }

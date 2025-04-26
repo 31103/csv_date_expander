@@ -8,6 +8,7 @@
   - HTML5
   - CSS3 (プレーンCSS、ビルド時にインライン化)
   - JavaScript (ES Modules、TypeScriptからビルド)
+  - **標準DOM API (ファイル選択、ドラッグ&ドロップ)**
 
 ## 開発セットアップ
 
