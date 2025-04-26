@@ -2,26 +2,29 @@ import { formatDate, parseDate } from "./dateUtils.ts";
 import { generateCSV, parseCSV } from "./csvParser.ts";
 import {
   clearError,
-  clearSelectedFileName, // Added: Function to clear selected file name
-  // showStatus, // Removed
+  clearSelectedFileName,
   clearStatus,
-  DetailedWarning, // Added
+  DetailedWarning,
   fileInput,
-  getSelectedColumnNames, // Added
+  generateCsvPreview,
+  getSelectedColumnNames,
   hideDownloadArea,
-  hideWarningDetailsArea, // Added
+  hideProcessingIndicator,
+  hideResultSummary,
+  hideWarningDetailsArea,
   maxDaysLimitInput,
-  populateColumnSelectors, // Added
-  resetColumnSelectors, // Added
+  populateColumnSelectors,
+  resetColumnSelectors,
   setProcessButtonState,
-  // appendWarningDetails, // Removed
   setupEventListeners,
   showDownloadArea,
   showError,
-  showSelectedFileName, // Added: Function to display selected file name
-  showStatusWithWarnings, // Added
-  showWarningDetails, // Added
-  WarningInfo, // Added
+  showProcessingIndicator,
+  showResultSummary,
+  showSelectedFileName,
+  showStatusWithWarnings,
+  showWarningDetails,
+  WarningInfo,
 } from "./domHandler.ts";
 
 let processedCsvString: string = ""; // Store processed data for download
@@ -29,10 +32,6 @@ let originalFileName: string = "data"; // Store original filename for download
 let selectedFile: File | null = null; // Added: Store the selected/dropped file
 let parsedCsvData: { header: string[]; dataRows: string[][] } | null = null; // Added: Store parsed CSV data
 
-/**
- * Updates the selected file state and UI.
- * @param file The file selected or dropped by the user.
- */
 /**
  * Updates the selected file state and UI, and loads header for column selection.
  * @param file The file selected or dropped by the user.
@@ -43,15 +42,20 @@ async function updateSelectedFile(file: File | null): Promise<void> {
   clearStatus(); // Clear previous status/results
   hideDownloadArea();
   hideWarningDetailsArea();
+  hideResultSummary(); // 結果サマリーを非表示
   processedCsvString = "";
   parsedCsvData = null; // Reset parsed data
   resetColumnSelectors(); // Reset column selectors initially
 
   if (file) {
+    // ファイル名だけを先に表示（プレビューはまだ）
     showSelectedFileName(file.name);
     originalFileName = file.name.replace(/\.csv$/i, ""); // Store for download filename
 
     try {
+      // 処理中インジケーターを表示
+      showProcessingIndicator();
+
       // Read and parse header to populate column selectors
       const arrayBuffer = await readFileAsArrayBuffer(file);
       const csvText = decodeCsvText(arrayBuffer);
@@ -61,13 +65,22 @@ async function updateSelectedFile(file: File | null): Promise<void> {
         showError("CSVファイルが空か、ヘッダー行がありません。");
         clearSelectedFileName();
         selectedFile = null; // Clear selected file state on error
+        hideProcessingIndicator(); // 処理中インジケーターを非表示
         return;
       }
 
       const header = data[0];
       populateColumnSelectors(header); // Populate dropdowns with header names
+
+      // プレビューを生成して表示
+      const previewContent = generateCsvPreview(data, 3);
+      showSelectedFileName(file.name, previewContent);
+
       // Store parsed data for later use in processFile
       parsedCsvData = { header: header, dataRows: data.slice(1) };
+
+      // 処理中インジケーターを非表示
+      hideProcessingIndicator();
     } catch (error) {
       console.error(
         "ファイルの読み込みまたはヘッダー解析中にエラーが発生しました:",
@@ -81,6 +94,7 @@ async function updateSelectedFile(file: File | null): Promise<void> {
       clearSelectedFileName();
       selectedFile = null; // Clear selected file state on error
       parsedCsvData = null; // Reset parsed data on error
+      hideProcessingIndicator(); // 処理中インジケーターを非表示
     }
   } else {
     clearSelectedFileName();
@@ -98,8 +112,9 @@ async function processFile(file: File): Promise<void> {
   clearStatus();
   hideDownloadArea();
   hideWarningDetailsArea();
+  hideResultSummary(); // 結果サマリーを非表示
   processedCsvString = "";
-  setProcessButtonState(true);
+  setProcessButtonState(true); // これにより処理中インジケーターも表示される
 
   // 2. Get column names and limit inputs
   const selectedColNames = getSelectedColumnNames();
@@ -193,9 +208,19 @@ async function processFile(file: File): Promise<void> {
         );
         showStatusWithWarnings("処理結果なし。", warningsSummary);
         showWarningDetails(detailedWarnings);
+        // エラーの場合は結果サマリーをエラー表示
+        showResultSummary(
+          "処理できる有効なデータがありませんでした。",
+          "error",
+        );
       } else {
         showError(
           "有効な日付範囲を持つデータ行が見つかりませんでした。入力ファイル、列名、上限値を確認してください。",
+        );
+        // エラーの場合は結果サマリーをエラー表示
+        showResultSummary(
+          "有効な日付範囲を持つデータ行が見つかりませんでした。",
+          "error",
         );
       }
       // No download area shown if no rows processed
@@ -207,8 +232,10 @@ async function processFile(file: File): Promise<void> {
         error instanceof Error ? error.message : String(error)
       }`,
     );
+    // エラーの場合は結果サマリーをエラー表示
+    showResultSummary("処理中にエラーが発生しました。", "error");
   } finally {
-    setProcessButtonState(false); // Ensure button is re-enabled
+    setProcessButtonState(false); // Ensure button is re-enabled and processing indicator is hidden
   }
 }
 
