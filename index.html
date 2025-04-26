@@ -50,24 +50,16 @@
 
       <div class="input-grid">
         <div>
-          <label for="startDateCol">2. 開始日の列番号:</label>
-          <input
-            type="number"
-            id="startDateCol"
-            min="1"
-            value="2"
-            placeholder="例: 2"
-          >
+          <label for="startDateColSelect">2. 開始日の列名:</label>
+          <select id="startDateColSelect">
+            <option value="">ファイルを選択してください</option>
+          </select>
         </div>
         <div>
-          <label for="endDateCol">3. 終了日の列番号:</label>
-          <input
-            type="number"
-            id="endDateCol"
-            min="1"
-            value="3"
-            placeholder="例: 3"
-          >
+          <label for="endDateColSelect">3. 終了日の列名:</label>
+          <select id="endDateColSelect">
+            <option value="">ファイルを選択してください</option>
+          </select>
         </div>
         <div>
           <label for="maxDaysLimit">4. 展開行数上限:</label>

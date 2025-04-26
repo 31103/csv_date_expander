@@ -6,11 +6,13 @@ import {
   // showStatus, // Removed
   clearStatus,
   DetailedWarning, // Added
-  endDateColInput,
   fileInput,
+  getSelectedColumnNames, // Added
   hideDownloadArea,
   hideWarningDetailsArea, // Added
   maxDaysLimitInput,
+  populateColumnSelectors, // Added
+  resetColumnSelectors, // Added
   setProcessButtonState,
   // appendWarningDetails, // Removed
   setupEventListeners,
@@ -19,31 +21,71 @@ import {
   showSelectedFileName, // Added: Function to display selected file name
   showStatusWithWarnings, // Added
   showWarningDetails, // Added
-  startDateColInput,
   WarningInfo, // Added
 } from "./domHandler.ts";
 
 let processedCsvString: string = ""; // Store processed data for download
 let originalFileName: string = "data"; // Store original filename for download
 let selectedFile: File | null = null; // Added: Store the selected/dropped file
+let parsedCsvData: { header: string[]; dataRows: string[][] } | null = null; // Added: Store parsed CSV data
 
 /**
  * Updates the selected file state and UI.
  * @param file The file selected or dropped by the user.
  */
-function updateSelectedFile(file: File | null): void {
+/**
+ * Updates the selected file state and UI, and loads header for column selection.
+ * @param file The file selected or dropped by the user.
+ */
+async function updateSelectedFile(file: File | null): Promise<void> {
   selectedFile = file;
-  if (file) {
-    showSelectedFileName(file.name);
-    clearError(); // Clear any previous "no file selected" error
-  } else {
-    clearSelectedFileName();
-  }
-  // Reset previous results when a new file is selected/deselected
-  clearStatus();
+  clearError(); // Clear any previous errors
+  clearStatus(); // Clear previous status/results
   hideDownloadArea();
   hideWarningDetailsArea();
   processedCsvString = "";
+  parsedCsvData = null; // Reset parsed data
+  resetColumnSelectors(); // Reset column selectors initially
+
+  if (file) {
+    showSelectedFileName(file.name);
+    originalFileName = file.name.replace(/\.csv$/i, ""); // Store for download filename
+
+    try {
+      // Read and parse header to populate column selectors
+      const arrayBuffer = await readFileAsArrayBuffer(file);
+      const csvText = decodeCsvText(arrayBuffer);
+      const data = parseCSV(csvText);
+
+      if (!data || data.length < 1) { // Need at least a header row
+        showError("CSVファイルが空か、ヘッダー行がありません。");
+        clearSelectedFileName();
+        selectedFile = null; // Clear selected file state on error
+        return;
+      }
+
+      const header = data[0];
+      populateColumnSelectors(header); // Populate dropdowns with header names
+      // Store parsed data for later use in processFile
+      parsedCsvData = { header: header, dataRows: data.slice(1) };
+    } catch (error) {
+      console.error(
+        "ファイルの読み込みまたはヘッダー解析中にエラーが発生しました:",
+        error,
+      );
+      showError(
+        `ファイルの読み込みまたはヘッダー解析に失敗しました: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      clearSelectedFileName();
+      selectedFile = null; // Clear selected file state on error
+      parsedCsvData = null; // Reset parsed data on error
+    }
+  } else {
+    clearSelectedFileName();
+    // Column selectors are already reset at the start of the function
+  }
 }
 
 /**
@@ -59,24 +101,23 @@ async function processFile(file: File): Promise<void> {
   processedCsvString = "";
   setProcessButtonState(true);
 
-  // 2. Get column and limit inputs (validation happens here too)
-  const startDateColIndex = parseInt(startDateColInput.value || "NaN", 10) - 1; // 0-based
-  const endDateColIndex = parseInt(endDateColInput.value || "NaN", 10) - 1; // 0-based
+  // 2. Get column names and limit inputs
+  const selectedColNames = getSelectedColumnNames();
   let maxDaysLimit = parseInt(maxDaysLimitInput.value || "365", 10); // Get limit, default 365
 
-  // 3. Validate column/limit inputs
-  if (isNaN(startDateColIndex) || startDateColIndex < 0) {
-    showError("有効な開始日の列番号 (1以上) を入力してください。");
+  // 3. Validate column name selection and limit input
+  if (!selectedColNames.start) {
+    showError("開始日の列を選択してください。");
     setProcessButtonState(false);
     return;
   }
-  if (isNaN(endDateColIndex) || endDateColIndex < 0) {
-    showError("有効な終了日の列番号 (1以上) を入力してください。");
+  if (!selectedColNames.end) {
+    showError("終了日の列を選択してください。");
     setProcessButtonState(false);
     return;
   }
-  if (startDateColIndex === endDateColIndex) {
-    showError("開始日と終了日の列番号は異なる必要があります。");
+  if (selectedColNames.start === selectedColNames.end) {
+    showError("開始日と終了日の列名は異なる必要があります。");
     setProcessButtonState(false);
     return;
   }
@@ -86,40 +127,40 @@ async function processFile(file: File): Promise<void> {
     maxDaysLimitInput.value = "365";
   }
 
-  originalFileName = file.name.replace(/\.csv$/i, ""); // Store for download filename
+  // 4. Check if parsed data is available (should be loaded by updateSelectedFile)
+  if (!parsedCsvData) {
+    showError(
+      "CSVデータが読み込まれていません。ファイルを再選択してください。",
+    );
+    setProcessButtonState(false);
+    return;
+  }
 
-  // 4. Read the file using a Promise for async handling
+  const originalHeader = parsedCsvData.header;
+  const originalDataRows = parsedCsvData.dataRows;
+
+  // 5. Find column indices based on selected names
+  const startDateColIndex = originalHeader.indexOf(selectedColNames.start);
+  const endDateColIndex = originalHeader.indexOf(selectedColNames.end);
+
+  // 6. Validate found indices and data rows
   try {
-    const arrayBuffer = await readFileAsArrayBuffer(file);
-
-    // 5. Decode the file content
-    const csvText = decodeCsvText(arrayBuffer);
-
-    // 6. Parse CSV
-    const data = parseCSV(csvText);
-
-    if (!data || data.length < 2) { // Need header + at least one data row
+    if (startDateColIndex === -1) {
       showError(
-        data.length < 1
-          ? "CSVファイルが空か、読み込みに失敗しました。"
-          : "CSVファイルにはヘッダー行の他に、少なくとも1行のデータが必要です。",
+        `開始日の列 "${selectedColNames.start}" がヘッダーに見つかりません。`,
       );
       setProcessButtonState(false);
       return;
     }
-
-    const originalHeader = data[0];
-    const originalDataRows = data.slice(1);
-
-    if (
-      startDateColIndex >= originalHeader.length ||
-      endDateColIndex >= originalHeader.length
-    ) {
+    if (endDateColIndex === -1) {
       showError(
-        `指定された列番号 (${
-          Math.max(startDateColIndex, endDateColIndex) + 1
-        }) がCSVの列数 (${originalHeader.length}) を超えています。`,
+        `終了日の列 "${selectedColNames.end}" がヘッダーに見つかりません。`,
       );
+      setProcessButtonState(false);
+      return;
+    }
+    if (originalDataRows.length === 0) {
+      showError("CSVファイルに処理可能なデータ行が含まれていません。");
       setProcessButtonState(false);
       return;
     }
@@ -146,9 +187,7 @@ async function processFile(file: File): Promise<void> {
     } else {
       // Determine why no rows were generated
       const totalSkipped = warningsSummary.reduce((sum, w) => sum + w.count, 0); // Approx total skipped
-      if (originalDataRows.length === 0) {
-        showError("CSVファイルに処理可能なデータ行が含まれていません。");
-      } else if (totalSkipped >= originalDataRows.length) { // Use >= for safety
+      if (totalSkipped >= originalDataRows.length) { // Use >= for safety
         showError(
           "処理できる有効なデータがありませんでした。詳細は下の警告リストを確認してください。",
         );
@@ -156,7 +195,7 @@ async function processFile(file: File): Promise<void> {
         showWarningDetails(detailedWarnings);
       } else {
         showError(
-          "有効な日付範囲を持つデータ行が見つかりませんでした。入力ファイル、列番号、上限値を確認してください。",
+          "有効な日付範囲を持つデータ行が見つかりませんでした。入力ファイル、列名、上限値を確認してください。",
         );
       }
       // No download area shown if no rows processed
@@ -416,6 +455,13 @@ function handleProcessClick(): void {
     showError("CSVファイルを選択またはドロップしてください。");
     return;
   }
+  // Add check for parsed data before calling processFile
+  if (!parsedCsvData) {
+    showError(
+      "CSVデータの読み込みが完了していません。ファイル選択をやり直してください。",
+    );
+    return;
+  }
   // Now call processFile with the stored file
   processFile(selectedFile);
 }
@@ -450,10 +496,10 @@ function handleDownloadClick(): void {
 
 // --- Initialize ---
 // Add event listener for file input change
-fileInput.addEventListener("change", (event) => {
+fileInput.addEventListener("change", async (event) => { // Made async
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0] ?? null; // Get file or null
-  updateSelectedFile(file); // Update the stored file and UI
+  await updateSelectedFile(file); // Await the async function
   target.value = ""; // Clear the input value
 });
 
