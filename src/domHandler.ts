@@ -31,17 +31,36 @@ export const errorDiv = getElementByIdOrThrow<HTMLDivElement>("error");
 export const statusDiv = getElementByIdOrThrow<HTMLDivElement>("status");
 export const warningDetailsArea = getElementByIdOrThrow<HTMLDivElement>(
   "warningDetails",
-); // Added
+);
 export const warningList = getElementByIdOrThrow<HTMLUListElement>(
   "warningList",
-); // Added
+);
 export const selectedFileNameDiv = getElementByIdOrThrow<HTMLDivElement>(
   "selectedFileName",
-); // Added for displaying filename
-
+);
 export const fileDropArea = getElementByIdOrThrow<HTMLDivElement>(
   "fileDropArea",
-); // Added for drag & drop
+);
+
+// 新しいUI要素の参照
+export const processingIndicator = getElementByIdOrThrow<HTMLDivElement>(
+  "processingIndicator",
+);
+export const resultSummary = getElementByIdOrThrow<HTMLDivElement>(
+  "resultSummary",
+);
+export const resultText = getElementByIdOrThrow<HTMLDivElement>(
+  "resultSummary",
+).querySelector(".result-text") as HTMLDivElement;
+export const helpToggle = getElementByIdOrThrow<HTMLButtonElement>(
+  "helpToggle",
+);
+export const helpContent = getElementByIdOrThrow<HTMLDivElement>(
+  "helpContent",
+);
+export const warningToggle = document.querySelector<HTMLButtonElement>(
+  ".warning-toggle",
+);
 
 // --- Type Definitions ---
 /** Represents information about a specific type of warning during processing. */
@@ -107,15 +126,46 @@ export function getSelectedColumnNames(): {
   return { start, end };
 }
 
-/** Displays the selected file name. */
-export function showSelectedFileName(fileName: string): void {
-  selectedFileNameDiv.textContent = `選択中のファイル: ${fileName}`;
+/**
+ * Displays the selected file name and preview.
+ * @param fileName The name of the selected file.
+ * @param previewContent Optional preview content to display.
+ */
+export function showSelectedFileName(
+  fileName: string,
+  previewContent?: string,
+): void {
+  const fileNameElement = selectedFileNameDiv.querySelector(".file-name");
+  if (fileNameElement) {
+    fileNameElement.textContent = fileName;
+  }
+
+  if (previewContent) {
+    const previewContentElement = selectedFileNameDiv.querySelector(
+      ".file-preview-content",
+    );
+    if (previewContentElement) {
+      previewContentElement.textContent = previewContent;
+    }
+  }
+
   selectedFileNameDiv.classList.remove("hidden");
 }
 
 /** Clears the displayed selected file name. */
 export function clearSelectedFileName(): void {
-  selectedFileNameDiv.textContent = "";
+  const fileNameElement = selectedFileNameDiv.querySelector(".file-name");
+  if (fileNameElement) {
+    fileNameElement.textContent = "";
+  }
+
+  const previewContentElement = selectedFileNameDiv.querySelector(
+    ".file-preview-content",
+  );
+  if (previewContentElement) {
+    previewContentElement.textContent = "";
+  }
+
   selectedFileNameDiv.classList.add("hidden");
 }
 
@@ -126,6 +176,7 @@ export function showError(message: string): void {
   statusDiv.classList.add("hidden"); // Hide status when error occurs
   downloadContainer.classList.add("hidden"); // Hide download when error occurs
   hideWarningDetailsArea(); // Hide warning details when error occurs
+  hideResultSummary(); // Hide result summary when error occurs
 }
 
 /** Hides the error message area. */
@@ -155,15 +206,15 @@ export function showStatusWithWarnings(
   statusDiv.textContent = messageText; // Use textContent for simple status
   statusDiv.classList.remove("hidden");
   clearError(); // Clear any previous errors when showing status
-  // Warning details list is handled separately
+
+  // 結果サマリーも表示
+  showResultSummary(messageText, warnings.length > 0 ? "warning" : "success");
 }
 
 /** Hides the status message area. */
 export function clearStatus(): void {
   statusDiv.textContent = ""; // Clear textContent
   statusDiv.classList.add("hidden");
-  // When status is cleared, also clear selected file name if no file is selected
-  // This logic is now handled in updateSelectedFile in main.ts
 }
 
 /** Shows the download button and container. */
@@ -180,6 +231,13 @@ export function hideDownloadArea(): void {
 export function setProcessButtonState(isLoading: boolean): void {
   processBtn.disabled = isLoading;
   processBtn.textContent = isLoading ? "処理中..." : "処理実行";
+
+  // 処理中インジケーターの表示/非表示
+  if (isLoading) {
+    showProcessingIndicator();
+  } else {
+    hideProcessingIndicator();
+  }
 }
 
 /**
@@ -245,6 +303,66 @@ export function setDropAreaHighlight(highlight: boolean): void {
   }
 }
 
+/**
+ * 処理中インジケーターを表示する
+ */
+export function showProcessingIndicator(): void {
+  processingIndicator.classList.remove("hidden");
+}
+
+/**
+ * 処理中インジケーターを非表示にする
+ */
+export function hideProcessingIndicator(): void {
+  processingIndicator.classList.add("hidden");
+}
+
+/**
+ * 結果サマリーを表示する
+ * @param message 表示するメッセージ
+ * @param type 結果の種類 ("success", "warning", "error")
+ */
+export function showResultSummary(
+  message: string,
+  type: "success" | "warning" | "error" = "success",
+): void {
+  const resultIcon = resultSummary.querySelector(".result-icon");
+  if (resultIcon) {
+    resultIcon.className = `result-icon ${type}`;
+  }
+
+  if (resultText) {
+    resultText.textContent = message;
+  }
+
+  resultSummary.classList.remove("hidden");
+}
+
+/**
+ * 結果サマリーを非表示にする
+ */
+export function hideResultSummary(): void {
+  resultSummary.classList.add("hidden");
+}
+
+/**
+ * CSVデータのプレビューを生成する
+ * @param csvData CSVデータ（行の配列）
+ * @param maxRows 表示する最大行数
+ * @returns プレビュー用のテキスト
+ */
+export function generateCsvPreview(
+  csvData: string[][],
+  maxRows: number = 3,
+): string {
+  if (!csvData || csvData.length === 0) {
+    return "プレビューできるデータがありません";
+  }
+
+  const previewRows = csvData.slice(0, maxRows);
+  return previewRows.map((row) => row.join(", ")).join("\n");
+}
+
 // --- Event Listener Setup ---
 
 /**
@@ -256,7 +374,7 @@ export function setDropAreaHighlight(highlight: boolean): void {
 export function setupEventListeners(
   processCallback: () => void,
   downloadCallback: () => void,
-  fileDropCallback: (file: File) => void, // Added for drag & drop
+  fileDropCallback: (file: File) => void,
 ): void {
   processBtn.addEventListener("click", processCallback);
   downloadBtn.addEventListener("click", downloadCallback);
@@ -288,4 +406,35 @@ export function setupEventListeners(
       }
     }
   });
+
+  // ヘルプトグルのイベントリスナー
+  helpToggle.addEventListener("click", () => {
+    const isHidden = helpContent.classList.contains("hidden");
+    if (isHidden) {
+      helpContent.classList.remove("hidden");
+      helpToggle.textContent = "使い方を隠す";
+    } else {
+      helpContent.classList.add("hidden");
+      helpToggle.textContent = "使い方を表示";
+    }
+  });
+
+  // 警告トグルのイベントリスナー
+  if (warningToggle) {
+    warningToggle.addEventListener("click", () => {
+      const warningContent = warningDetailsArea.querySelector(
+        ".warning-content",
+      );
+      if (warningContent) {
+        const isHidden = warningContent.classList.contains("hidden");
+        if (isHidden) {
+          warningContent.classList.remove("hidden");
+          warningToggle.setAttribute("aria-expanded", "true");
+        } else {
+          warningContent.classList.add("hidden");
+          warningToggle.setAttribute("aria-expanded", "false");
+        }
+      }
+    });
+  }
 }

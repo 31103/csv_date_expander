@@ -1,158 +1,437 @@
-/* Basic Reset & Body Styles */
-body {
-  font-family: sans-serif;
-  background-color: #f3f4f6; /* gray-100 */
+/* ===== 基本設定 ===== */
+:root {
+  /* カラーパレット */
+  --color-primary: #4361ee;
+  --color-primary-dark: #3a56d4;
+  --color-primary-light: #eef2ff;
+  --color-secondary: #2ec4b6;
+  --color-secondary-dark: #21a99c;
+  --color-secondary-light: #e0f7f5;
+
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  --color-success: #10b981;
+  --color-success-light: #d1fae5;
+  --color-warning: #f59e0b;
+  --color-warning-light: #fffbe0;
+  --color-error: #ef4444;
+  --color-error-light: #fee2e2;
+  --color-info: #3b82f6;
+  --color-info-light: #dbeafe;
+
+  /* タイポグラフィ */
+  --font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+
+  /* スペーシング */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+
+  /* ボーダーラディウス */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* シャドウ */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  /* トランジション */
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+}
+
+/* リセットとベーススタイル */
+* {
+  box-sizing: border-box;
   margin: 0;
-  padding: 1rem; /* p-4 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-800);
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
   min-height: 100vh;
 }
 
-/* Container */
-.container {
-  max-width: 42rem; /* max-w-2xl */
+/* ===== レイアウト ===== */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-header {
+  background-color: white;
+  padding: var(--spacing-md) var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-icon {
+  color: var(--color-primary);
+  margin-right: var(--spacing-sm);
+}
+
+.app-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-gray-800);
+  margin: 0;
+}
+
+.app-content {
+  flex: 1;
+  padding: var(--spacing-lg);
+  max-width: 900px;
+  margin: 0 auto;
   width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-  background-color: #ffffff; /* bg-white */
-  padding: 1.5rem; /* p-6 */
-  border-radius: 0.5rem; /* rounded-lg */
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
 }
 
-/* Headings */
-h1 {
-  font-size: 1.5rem; /* text-2xl */
-  font-weight: 700; /* font-bold */
-  margin-bottom: 1.5rem; /* mb-6 */
-  color: #1f2937; /* text-gray-800 */
-  text-align: center;
+.app-footer {
+  background-color: white;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid var(--color-gray-200);
 }
 
-h2 {
-  font-size: 1.125rem; /* text-lg */
-  font-weight: 600; /* font-semibold */
-  margin-bottom: 0.75rem; /* mb-3 */
+/* ===== カードスタイル ===== */
+.step-card {
+  background-color: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--spacing-xl);
+  overflow: hidden;
 }
 
-/* Usage Guide */
-.usage-guide {
-  background-color: #eff6ff; /* bg-blue-50 */
-  padding: 1rem; /* p-4 */
-  border-radius: 0.375rem; /* rounded-md */
-  margin-bottom: 1.5rem; /* mb-6 */
-  border: 1px solid #bfdbfe; /* border border-blue-200 */
+.step-header {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background-color: var(--color-primary-light);
+  border-bottom: 1px solid var(--color-gray-200);
 }
 
-.usage-guide h2 {
-  color: #1e40af; /* text-blue-800 */
+.step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background-color: var(--color-primary);
+  color: white;
+  border-radius: 50%;
+  font-weight: 600;
+  margin-right: var(--spacing-md);
 }
 
-.usage-list {
-  list-style: none; /* Remove default list style */
-  padding-left: 0; /* Remove default padding */
-  color: #374151; /* text-gray-700 */
+.step-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-gray-800);
+  margin: 0;
 }
 
-.usage-list li {
-  margin-bottom: 0.5rem;
+.step-content {
+  padding: var(--spacing-lg);
+}
+
+/* ===== ファイルドロップエリア ===== */
+.file-drop-area {
   position: relative;
-  padding-left: 1.5rem; /* Space for the icon */
+  border: 2px dashed var(--color-gray-300);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xl);
+  text-align: center;
+  transition: all var(--transition-normal);
+  background-color: var(--color-gray-50);
+  cursor: pointer;
 }
 
-.usage-list li::before {
-  content: "✓";
-  color: #10b981; /* Tailwind green-500 */
-  margin-right: 0.5rem;
-  font-weight: bold;
+.file-drop-area:hover, .file-drop-area.dragover {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-light);
+}
+
+.file-input {
   position: absolute;
+  top: 0;
   left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 10;
 }
 
-.note {
-  font-size: 0.875rem; /* text-sm */
-  color: #4b5563; /* text-gray-600 */
-  margin-top: 0.75rem; /* mt-3 */
+.file-drop-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Input Groups and Grid */
-.input-group {
-  margin-bottom: 1rem; /* mb-4 */
+.file-icon {
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-md);
 }
 
-.input-grid {
+.file-drop-message {
+  color: var(--color-gray-600);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.primary-text {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* ファイル選択後の情報表示 */
+.selected-file-info {
+  margin-top: var(--spacing-lg);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.file-info-header {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--color-gray-100);
+  border-bottom: 1px solid var(--color-gray-200);
+  color: var(--color-gray-800);
+}
+
+.file-info-header svg {
+  margin-right: var(--spacing-sm);
+  color: var(--color-primary);
+}
+
+.file-name {
+  font-weight: 500;
+}
+
+.file-preview-container {
+  padding: var(--spacing-md);
+  background-color: white;
+}
+
+.file-preview-header {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-gray-600);
+  margin-bottom: var(--spacing-sm);
+}
+
+.file-preview-content {
+  font-family: monospace;
+  font-size: 0.875rem;
+  background-color: var(--color-gray-50);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  white-space: pre;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+/* ===== 設定エリア ===== */
+.settings-grid {
   display: grid;
-  grid-template-columns: repeat(1, minmax(0, 1fr)); /* grid-cols-1 */
-  gap: 1rem; /* gap-4 */
-  margin-bottom: 1rem; /* mb-4 */
+  grid-template-columns: repeat(1, 1fr);
+  gap: var(--spacing-lg);
 }
 
 @media (min-width: 640px) {
-  /* sm: */
-  .input-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)); /* sm:grid-cols-3 */
+  .settings-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-/* Labels */
-label {
-  display: block;
-  font-size: 0.875rem; /* text-sm */
-  font-weight: 500; /* font-medium */
-  color: #374151; /* text-gray-700 */
-  margin-bottom: 0.25rem; /* mb-1 */
+@media (min-width: 768px) {
+  .settings-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
-/* Input Fields */
-input[type="file"],
-input[type="number"] {
+.setting-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.setting-label {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-gray-700);
+  margin-bottom: var(--spacing-sm);
+}
+
+.setting-label-icon {
+  color: var(--color-primary);
+  margin-right: var(--spacing-sm);
+}
+
+/* セレクトボックス */
+.select-wrapper {
+  position: relative;
+}
+
+.setting-select {
   width: 100%;
-  padding: 0.5rem; /* p-2 */
-  border: 1px solid #d1d5db; /* border border-gray-300 */
-  border-radius: 0.375rem; /* rounded-md */
-  box-sizing: border-box; /* Ensure padding doesn't increase size */
-}
-
-input[type="file"] {
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  background-color: white;
+  font-size: 1rem;
+  color: var(--color-gray-800);
+  appearance: none;
   cursor: pointer;
-  /* Basic styling for file input button part */
-  /* Note: Full cross-browser styling is complex */
+  transition: border-color var(--transition-fast);
 }
 
-input:focus {
-  outline: 2px solid transparent;
-  outline-offset: 2px;
-  border-color: #6366f1; /* focus:border-indigo-500 */
-  box-shadow: 0 0 0 2px #6366f1; /* focus:ring-indigo-500 */
+.setting-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
-/* Buttons */
-button {
+.select-arrow {
+  position: absolute;
+  right: var(--spacing-md);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid var(--color-gray-500);
+  pointer-events: none;
+}
+
+/* 入力フィールド */
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.setting-input {
   width: 100%;
-  color: #ffffff; /* text-white */
-  font-weight: 700; /* font-bold */
-  padding-top: 0.625rem; /* py-2.5 */
-  padding-bottom: 0.625rem;
-  padding-left: 1rem; /* px-4 */
-  padding-right: 1rem;
-  border-radius: 0.375rem; /* rounded-md */
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  color: var(--color-gray-800);
+  transition: border-color var(--transition-fast);
+}
+
+.setting-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+/* ツールチップ */
+.input-tooltip {
+  margin-left: var(--spacing-sm);
+  color: var(--color-gray-500);
+  cursor: help;
+  position: relative;
+}
+
+.input-tooltip:hover::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  transform: translateY(-5px);
+  background-color: var(--color-gray-800);
+  color: white;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 100;
+}
+
+.input-tooltip:hover::after {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  right: 10px;
+  transform: translateY(0);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid var(--color-gray-800);
+  z-index: 100;
+}
+
+/* ===== ボタン ===== */
+.primary-button, .secondary-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md) var(--spacing-lg);
   border: none;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.15s ease-in-out;
-  margin-bottom: 1rem; /* mb-4 */
+  transition: all var(--transition-fast);
+  width: 100%;
 }
 
-button:focus {
-  outline: 2px solid transparent;
-  outline-offset: 2px;
-  box-shadow:
-    0 0 0 2px #ffffff,
-    0 0 0 4px
-    #4f46e5; /* focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 */
+.primary-button {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.primary-button:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+}
+
+.secondary-button {
+  background-color: var(--color-secondary);
+  color: white;
+}
+
+.secondary-button:hover:not(:disabled) {
+  background-color: var(--color-secondary-dark);
+}
+
+.button-icon {
+  margin-right: var(--spacing-sm);
 }
 
 button:disabled {
@@ -160,116 +439,229 @@ button:disabled {
   cursor: not-allowed;
 }
 
-#processBtn {
-  background-color: #4f46e5; /* bg-indigo-600 */
+button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
-#processBtn:hover:not(:disabled) {
-  background-color: #4338ca; /* hover:bg-indigo-700 */
+/* ===== 処理インジケーター ===== */
+.processing-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: var(--spacing-lg) 0;
+  color: var(--color-gray-600);
 }
 
-#downloadBtn {
-  background-color: #16a34a; /* bg-green-600 */
-  padding-left: 1.25rem; /* px-5 */
-  padding-right: 1.25rem;
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--color-primary-light);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spinner 0.8s linear infinite;
+  margin-right: var(--spacing-md);
 }
 
-#downloadBtn:hover:not(:disabled) {
-  background-color: #15803d; /* hover:bg-green-700 */
+@keyframes spinner {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-#downloadBtn:focus {
-  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #22c55e; /* focus:ring-green-500 */
+/* ===== 結果表示 ===== */
+.result-summary {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-md);
+  margin: var(--spacing-lg) 0;
+  background-color: var(--color-success-light);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--color-success);
 }
 
-/* Status and Error Messages */
-.status-message,
-.error-message {
-  margin-top: 1rem; /* mt-4 */
-  font-weight: 500; /* font-medium */
-  padding: 0.75rem; /* p-3 */
-  border-radius: 0.375rem; /* rounded-md */
-  text-align: center;
+.result-icon {
+  margin-right: var(--spacing-md);
+}
+
+.result-icon.success {
+  color: var(--color-success);
+}
+
+.result-icon.warning {
+  color: var(--color-warning);
+}
+
+.result-icon.error {
+  color: var(--color-error);
+}
+
+.result-text {
+  font-weight: 500;
+}
+
+/* ステータスとエラーメッセージ */
+.status-message, .error-message {
+  padding: var(--spacing-md);
+  margin: var(--spacing-md) 0;
+  border-radius: var(--radius-md);
+  font-weight: 500;
 }
 
 .status-message {
-  color: #065f46; /* text-green-700 */
-  background-color: #d1fae5; /* bg-green-100 */
+  background-color: var(--color-info-light);
+  color: var(--color-info);
+  border-left: 4px solid var(--color-info);
 }
 
 .error-message {
-  color: #991b1b; /* text-red-700 */
-  background-color: #fee2e2; /* bg-red-100 */
+  background-color: var(--color-error-light);
+  color: var(--color-error);
+  border-left: 4px solid var(--color-error);
 }
 
-/* Warning Details Area */
+/* 警告詳細エリア */
 .warning-details-area {
-  margin-top: 1rem; /* mt-4 */
-  padding: 0.75rem; /* p-3 */
-  border-radius: 0.375rem; /* rounded-md */
-  background-color: #fffbe0; /* bg-yellow-100 */
-  border: 1px solid #fcd34d; /* border-yellow-400 */
-  color: #78350f; /* text-yellow-900 */
+  margin: var(--spacing-lg) 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-warning);
 }
 
-.warning-details-area h3 {
-  font-size: 1rem; /* text-base */
-  font-weight: 600; /* font-semibold */
-  margin-top: 0;
-  margin-bottom: 0.5rem; /* mb-2 */
-  color: #78350f; /* text-yellow-900 */
+.warning-header {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-md);
+  background-color: var(--color-warning-light);
+  border-bottom: 1px solid var(--color-warning);
 }
 
-.warning-details-area ul {
-  list-style: disc; /* Use discs for list items */
-  padding-left: 1.5rem; /* Indent list items */
-  margin-top: 0;
-  margin-bottom: 0;
+.warning-icon {
+  color: var(--color-warning);
+  margin-right: var(--spacing-sm);
 }
 
-.warning-details-area li {
-  margin-bottom: 0.25rem; /* mb-1 */
-  font-size: 0.875rem; /* text-sm */
-  line-height: 1.4;
+.warning-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  flex-grow: 1;
 }
 
-/* Download Area */
+.warning-toggle {
+  background: none;
+  border: none;
+  color: var(--color-gray-600);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+}
+
+.warning-toggle:focus {
+  outline: none;
+}
+
+.warning-content {
+  padding: var(--spacing-md);
+  background-color: white;
+}
+
+.warning-list {
+  list-style-position: inside;
+  padding-left: var(--spacing-md);
+}
+
+.warning-list li {
+  margin-bottom: var(--spacing-sm);
+  font-size: 0.875rem;
+}
+
+/* ダウンロードエリア */
 .download-area {
-  margin-top: 1.5rem; /* mt-6 */
-  text-align: center;
+  margin-top: var(--spacing-lg);
 }
 
-/* Utility */
+/* ===== ヘルプセクション ===== */
+.help-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+}
+
+.help-icon {
+  color: var(--color-info);
+  margin-right: var(--spacing-sm);
+}
+
+.help-toggle {
+  background: none;
+  border: none;
+  color: var(--color-info);
+  font-weight: 500;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+}
+
+.help-toggle:focus {
+  outline: none;
+}
+
+.help-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+}
+
+.help-card {
+  background-color: var(--color-info-light);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.help-card h3 {
+  font-size: 1.25rem;
+  margin-bottom: var(--spacing-md);
+  color: var(--color-info);
+}
+
+.help-list {
+  padding-left: var(--spacing-xl);
+}
+
+.help-list li {
+  margin-bottom: var(--spacing-md);
+}
+
+.help-note {
+  font-size: 0.875rem;
+  color: var(--color-gray-600);
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: var(--color-gray-50);
+  border-radius: var(--radius-sm);
+}
+
+/* ===== ユーティリティクラス ===== */
 .hidden {
-  display: none;
+  display: none !important;
 }
 
-/* Drag and Drop Area Styles */
-#fileDropArea {
-  border: 2px dashed #ccc;
-  padding: 20px;
-  text-align: center;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
-  margin-top: 1em; /* Add some space above */
-  background-color: #f9f9f9;
-}
+/* レスポンシブ調整 */
+@media (max-width: 640px) {
+  .app-content {
+    padding: var(--spacing-md);
+  }
 
-#fileDropArea.dragover {
-  background-color: #e0e0e0;
-  border-color: #aaa;
-}
+  .step-content {
+    padding: var(--spacing-md);
+  }
 
-.drop-prompt {
-  margin-top: 0.5em;
-  font-size: 0.9em;
-  color: #555;
-}
+  .step-header {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
 
-/* Selected File Name Display */
-.selected-file-name {
-  margin-top: 0.5em;
-  font-size: 0.9em;
-  color: #333;
-  font-weight: bold;
-  min-height: 1.2em; /* Reserve space to prevent layout shifts */
+  .file-drop-area {
+    padding: var(--spacing-lg);
+  }
 }

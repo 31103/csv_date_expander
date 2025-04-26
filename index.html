@@ -9,86 +9,358 @@
   </head>
 
   <body>
-    <div class="container">
-      <h1>CSV 日付展開ツール</h1>
-
-      <div class="usage-guide">
-        <h2>使い方</h2>
-        <ol class="usage-list">
-          <li>
-            下の「CSVファイルを選択」ボタンをクリックし、処理したいCSVファイルを選びます。
-          </li>
-          <li>
-            「開始日の列番号」と「終了日の列番号」に、それぞれ該当する列の番号（1から始まる番号）を入力します。
-          </li>
-          <li>
-            (オプション)
-            「展開行数上限」に、1つの元データ行から展開できる最大日数を指定します（デフォルト:
-            365）。
-          </li>
-          <li>「処理実行」ボタンをクリックします。</li>
-          <li>
-            処理が完了すると、「結果をダウンロード (CSV)」ボタンが表示されます。
-          </li>
-          <li>
-            ダウンロードボタンをクリックすると、展開されたデータを含むCSVファイルが保存されます。
-          </li>
-        </ol>
-        <p class="note">
-          注意: CSVの1行目はヘッダー行として扱われます。日付は "YYYY/MM/DD"
-          形式で出力され、先頭列のヘッダーは "EXPANDDATE" となります。
-        </p>
-      </div>
-
-      <div class="input-group" id="fileDropArea">
-        <label for="csvFile">1. CSVファイルを選択:</label>
-        <input type="file" id="csvFile" accept=".csv">
-        <div id="selectedFileName" class="selected-file-name"></div>
-        <!-- Added for displaying filename -->
-        <p class="drop-prompt">または、ここにCSVファイルをドラッグ＆ドロップ</p>
-      </div>
-
-      <div class="input-grid">
-        <div>
-          <label for="startDateColSelect">2. 開始日の列名:</label>
-          <select id="startDateColSelect">
-            <option value="">ファイルを選択してください</option>
-          </select>
+    <div class="app-container">
+      <header class="app-header">
+        <div class="logo-container">
+          <div class="logo-icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              width="24"
+              height="24"
+            >
+              <path fill="none" d="M0 0h24v24H0z" />
+              <path
+                d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 4h7v5h5v11H6V4zm8 6v-4l4 4h-4z"
+                fill="currentColor"
+              />
+            </svg>
+          </div>
+          <h1 class="app-title">CSV 日付展開ツール</h1>
         </div>
-        <div>
-          <label for="endDateColSelect">3. 終了日の列名:</label>
-          <select id="endDateColSelect">
-            <option value="">ファイルを選択してください</option>
-          </select>
+      </header>
+
+      <main class="app-content">
+        <section class="step-card" id="step1">
+          <div class="step-header">
+            <div class="step-number">1</div>
+            <h2 class="step-title">CSVファイルを選択</h2>
+          </div>
+          <div class="step-content">
+            <div class="file-drop-area" id="fileDropArea">
+              <input type="file" id="csvFile" accept=".csv" class="file-input">
+              <div class="file-drop-content">
+                <div class="file-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    width="48"
+                    height="48"
+                  >
+                    <path fill="none" d="M0 0h24v24H0z" />
+                    <path
+                      d="M12 12.586l4.243 4.242-1.415 1.415L13 16.415V22h-2v-5.587l-1.828 1.83-1.415-1.415L12 12.586zM12 2a7.001 7.001 0 0 1 6.954 6.194 5.5 5.5 0 0 1-.953 10.784v-2.014a3.5 3.5 0 1 0-1.112-6.91 5 5 0 1 0-9.777 0 3.5 3.5 0 0 0-1.292 6.88l.18.03v2.014a5.5 5.5 0 0 1-.954-10.784A7 7 0 0 1 12 2z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </div>
+                <p class="file-drop-message">
+                  <span class="primary-text">ファイルを選択</span>または<br>
+                  ここにCSVファイルをドラッグ＆ドロップ
+                </p>
+              </div>
+              <div id="selectedFileName" class="selected-file-info hidden">
+                <div class="file-info-header">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    width="18"
+                    height="18"
+                  >
+                    <path fill="none" d="M0 0h24v24H0z" />
+                    <path
+                      d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 4h7v5h5v11H6V4zm8 6v-4l4 4h-4z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  <span class="file-name"></span>
+                </div>
+                <div class="file-preview-container">
+                  <div class="file-preview-header">
+                    プレビュー（最初の3行）:
+                  </div>
+                  <div class="file-preview-content"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="step-card" id="step2">
+          <div class="step-header">
+            <div class="step-number">2</div>
+            <h2 class="step-title">設定</h2>
+          </div>
+          <div class="step-content">
+            <div class="settings-grid">
+              <div class="setting-group">
+                <label for="startDateColSelect" class="setting-label">
+                  <div class="setting-label-icon">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      width="18"
+                      height="18"
+                    >
+                      <path fill="none" d="M0 0h24v24H0z" />
+                      <path
+                        d="M17 3h4a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h4V1h2v2h6V1h2v2zm-2 2H9v2H7V5H4v4h16V5h-3v2h-2V5zm5 6H4v8h16v-8z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </div>
+                  開始日の列名
+                </label>
+                <div class="select-wrapper">
+                  <select id="startDateColSelect" class="setting-select">
+                    <option value="">ファイルを選択してください</option>
+                  </select>
+                  <div class="select-arrow"></div>
+                </div>
+              </div>
+
+              <div class="setting-group">
+                <label for="endDateColSelect" class="setting-label">
+                  <div class="setting-label-icon">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      width="18"
+                      height="18"
+                    >
+                      <path fill="none" d="M0 0h24v24H0z" />
+                      <path
+                        d="M17 3h4a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h4V1h2v2h6V1h2v2zm-2 2H9v2H7V5H4v4h16V5h-3v2h-2V5zm5 6H4v8h16v-8z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </div>
+                  終了日の列名
+                </label>
+                <div class="select-wrapper">
+                  <select id="endDateColSelect" class="setting-select">
+                    <option value="">ファイルを選択してください</option>
+                  </select>
+                  <div class="select-arrow"></div>
+                </div>
+              </div>
+
+              <div class="setting-group">
+                <label for="maxDaysLimit" class="setting-label">
+                  <div class="setting-label-icon">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      width="18"
+                      height="18"
+                    >
+                      <path fill="none" d="M0 0h24v24H0z" />
+                      <path
+                        d="M13 9h8L11 24v-9H4l9-15v9zm-2 2V7.22L7.532 13H13v4.394L17.263 11H11z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </div>
+                  展開行数上限
+                </label>
+                <div class="input-wrapper">
+                  <input
+                    type="number"
+                    id="maxDaysLimit"
+                    min="1"
+                    value="365"
+                    placeholder="例: 365"
+                    class="setting-input"
+                  >
+                  <div
+                    class="input-tooltip"
+                    data-tooltip="1つの元データ行から展開できる最大日数を指定します"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                    >
+                      <path fill="none" d="M0 0h24v24H0z" />
+                      <path
+                        d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm-1-5h2v2h-2v-2zm2-1.645V14h-2v-1.5a1 1 0 0 1 1-1 1.5 1.5 0 1 0-1.471-1.794l-1.962-.393A3.5 3.5 0 1 1 13 13.355z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="step-card" id="step3">
+          <div class="step-header">
+            <div class="step-number">3</div>
+            <h2 class="step-title">処理と結果</h2>
+          </div>
+          <div class="step-content">
+            <button id="processBtn" class="primary-button">
+              <span class="button-icon">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  width="18"
+                  height="18"
+                >
+                  <path fill="none" d="M0 0h24v24H0z" />
+                  <path
+                    d="M16.172 11l-5.364-5.364 1.414-1.414L20 12l-7.778 7.778-1.414-1.414L16.172 13H4v-2z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </span>
+              処理実行
+            </button>
+
+            <div id="processingIndicator" class="processing-indicator hidden">
+              <div class="spinner"></div>
+              <span>処理中...</span>
+            </div>
+
+            <div id="resultSummary" class="result-summary hidden">
+              <div class="result-icon success">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  height="24"
+                >
+                  <path fill="none" d="M0 0h24v24H0z" />
+                  <path
+                    d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-.997-6l7.07-7.071-1.414-1.414-5.656 5.657-2.829-2.829-1.414 1.414L11.003 16z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </div>
+              <div class="result-text"></div>
+            </div>
+
+            <div id="status" class="status-message hidden"></div>
+            <div id="error" class="error-message hidden"></div>
+
+            <div id="warningDetails" class="warning-details-area hidden">
+              <div class="warning-header">
+                <div class="warning-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    width="20"
+                    height="20"
+                  >
+                    <path fill="none" d="M0 0h24v24H0z" />
+                    <path
+                      d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm-1-5h2v2h-2v-2zm0-8h2v6h-2V7z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </div>
+                <h3>注意事項</h3>
+                <button class="warning-toggle" aria-label="詳細を表示/非表示">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    width="18"
+                    height="18"
+                    class="chevron-down"
+                  >
+                    <path fill="none" d="M0 0h24v24H0z" />
+                    <path
+                      d="M12 13.172l4.95-4.95 1.414 1.414L12 16 5.636 9.636 7.05 8.222z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <div class="warning-content">
+                <ul id="warningList" class="warning-list"></ul>
+              </div>
+            </div>
+
+            <div id="downloadContainer" class="download-area hidden">
+              <button id="downloadBtn" class="secondary-button">
+                <span class="button-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    width="18"
+                    height="18"
+                  >
+                    <path fill="none" d="M0 0h24v24H0z" />
+                    <path
+                      d="M13 12h3l-4 4-4-4h3V8h2v4zm2-8H5v16h14V8h-4V4zM3 2.992C3 2.444 3.447 2 3.999 2H16l5 5v13.993A1 1 0 0 1 20.007 22H3.993A1 1 0 0 1 3 21.008V2.992z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </span>
+                結果をダウンロード (CSV)
+              </button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="app-footer">
+        <div class="help-section">
+          <div class="help-icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+            >
+              <path fill="none" d="M0 0h24v24H0z" />
+              <path
+                d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm-1-5h2v2h-2v-2zm2-1.645V14h-2v-1.5a1 1 0 0 1 1-1 1.5 1.5 0 1 0-1.471-1.794l-1.962-.393A3.5 3.5 0 1 1 13 13.355z"
+                fill="currentColor"
+              />
+            </svg>
+          </div>
+          <button id="helpToggle" class="help-toggle">使い方を表示</button>
         </div>
-        <div>
-          <label for="maxDaysLimit">4. 展開行数上限:</label>
-          <input
-            type="number"
-            id="maxDaysLimit"
-            min="1"
-            value="365"
-            placeholder="例: 365"
-          >
+        <div id="helpContent" class="help-content hidden">
+          <div class="help-card">
+            <h3>使い方</h3>
+            <ol class="help-list">
+              <li>
+                <strong>CSVファイルを選択:</strong>
+                ファイル選択ボタンをクリックするか、指定エリアにCSVファイルをドラッグ＆ドロップします。
+              </li>
+              <li>
+                <strong>列名を選択:</strong>
+                開始日と終了日が含まれる列名をドロップダウンから選択します。
+              </li>
+              <li>
+                <strong>展開行数上限を設定:</strong>
+                1つの元データ行から展開できる最大日数を指定します（デフォルト:
+                365）。
+              </li>
+              <li>
+                <strong>処理実行:</strong>
+                「処理実行」ボタンをクリックして、CSVデータを処理します。
+              </li>
+              <li>
+                <strong>結果の確認:</strong>
+                処理が完了すると、生成された行数や警告などの結果が表示されます。
+              </li>
+              <li>
+                <strong>結果のダウンロード:</strong>
+                「結果をダウンロード」ボタンをクリックして、展開されたCSVファイルをダウンロードします。
+              </li>
+            </ol>
+            <p class="help-note">
+              注意: CSVの1行目はヘッダー行として扱われます。日付は "YYYY/MM/DD"
+              形式で出力され、先頭列のヘッダーは "EXPANDDATE" となります。
+            </p>
+          </div>
         </div>
-      </div>
-
-      <button id="processBtn">処理実行</button>
-
-      <div id="status" class="status-message hidden"></div>
-      <div id="error" class="error-message hidden"></div>
-
-      <!-- Warning Details Area -->
-      <div id="warningDetails" class="warning-details-area hidden">
-        <h3>スキップされた行の詳細:</h3>
-        <ul id="warningList">
-          <!-- Warning details will be added here by JavaScript -->
-        </ul>
-      </div>
-
-      <div id="downloadContainer" class="download-area hidden">
-        <button id="downloadBtn">結果をダウンロード (CSV)</button>
-      </div>
+      </footer>
     </div>
 
     <!-- JavaScriptはビルド時にインライン化される -->
