@@ -73,7 +73,6 @@ export function parseDate(dateString: string | null | undefined): Date | null {
     // Ignore errors from fallback constructor
   }
 
-  console.warn(`Could not parse date string: "${dateString}"`);
   return null; // Return null if all parsing attempts failed
 }
 

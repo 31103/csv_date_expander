@@ -1,6 +1,9 @@
 import { parseArgs } from "https://deno.land/std@0.224.0/cli/parse_args.ts";
+import { readAll } from "https://deno.land/std@0.224.0/io/read_all.ts"; // Import readAll
 import { generateCSV, parseCSV } from "./src/csvParser.ts"; // Import parseCSV and generateCSV
 import { formatDate, parseDate } from "./src/dateUtils.ts"; // Import date functions
+
+const VERSION = "0.2.0"; // Define the CLI version
 
 // --- Type Definitions (Ported from domHandler.ts) ---
 /** Represents information about a specific type of warning during processing. */
@@ -24,38 +27,41 @@ interface DetailedWarning {
  * @returns The decoded CSV text string.
  * @throws Error if decoding fails.
  */
-function decodeCsvText(buffer: Uint8Array): string {
+function decodeCsvText(buffer: Uint8Array, isVerbose: boolean): string { // Add isVerbose parameter
   try {
     // Check for UTF-8 BOM (EF BB BF)
     const bom = buffer.slice(0, 3);
     if (bom[0] === 0xEF && bom[1] === 0xBB && bom[2] === 0xBF) {
-      console.log("Decoding as UTF-8 (BOM detected)");
+      if (isVerbose) console.error("Decoding as UTF-8 (BOM detected)"); // Log to stderr if verbose
       return new TextDecoder("utf-8").decode(buffer.slice(3));
     } else {
-      // No BOM detected, try Shift_JIS first
+      // No BOM detected, try UTF-8 first (more common)
       try {
-        console.log("Attempting to decode as Shift_JIS");
-        const decoded = new TextDecoder("shift_jis", { fatal: true }).decode(
+        if (isVerbose) console.error("Attempting to decode as UTF-8 (no BOM)");
+        const decoded = new TextDecoder("utf-8", { fatal: true }).decode(
           buffer,
         );
-        console.log("Successfully decoded as Shift_JIS");
+        if (isVerbose) console.error("Successfully decoded as UTF-8 (no BOM)");
         return decoded;
-      } catch (shiftJisError) {
-        // If Shift_JIS fails, try UTF-8 (could be BOM-less UTF-8)
-        console.warn(
-          "Shift_JIS decoding failed, attempting UTF-8 (no BOM)",
-          shiftJisError,
-        );
+      } catch (utf8Error) {
+        // If UTF-8 fails, try Shift_JIS
+        if (isVerbose) {
+          console.error(
+            "UTF-8 (no BOM) decoding failed, attempting Shift_JIS",
+            // utf8Error // Optionally log the error details if verbose
+          );
+        }
         try {
-          const decoded = new TextDecoder("utf-8", { fatal: true }).decode(
+          if (isVerbose) console.error("Attempting to decode as Shift_JIS");
+          const decoded = new TextDecoder("shift_jis", { fatal: true }).decode(
             buffer,
           );
-          console.log("Successfully decoded as UTF-8 (no BOM)");
+          if (isVerbose) console.error("Successfully decoded as Shift_JIS");
           return decoded;
-        } catch (utf8Error) {
-          console.error(
-            "Failed to decode as both Shift_JIS and UTF-8.",
-            utf8Error,
+        } catch (shiftJisError) {
+          console.error( // Always log the final failure
+            "Failed to decode as both UTF-8 (no BOM) and Shift_JIS.",
+            // shiftJisError // Optionally log the error details
           );
           throw new Error(
             "ファイルの文字コードを自動判別できませんでした。ファイルが UTF-8 または Shift_JIS 形式であることを確認してください。",
@@ -235,45 +241,61 @@ function processDataRows(
 // --- Main Logic ---
 
 const HELP_MESSAGE = `
+CSV Date Expander CLI v${VERSION}
+
+Expands CSV rows based on a date range specified in columns.
+Reads from standard input and writes to standard output by default.
+
 Usage:
-  deno run --allow-read --allow-write cli.ts --file <input_csv_path> --start-col <start_date_column_number> --end-col <end_date_column_number> [options]
+  deno run --allow-read --allow-write cli.ts --start-col <number> --end-col <number> [options] [flags]
+  cat input.csv | deno run --allow-read --allow-write cli.ts --start-col <number> --end-col <number> [options] [flags] > output.csv
 
 Required Arguments:
-  --file <path>        Path to the input CSV file.
-  --start-col <number> Column number (1-based) containing the start date.
-  --end-col <number>   Column number (1-based) containing the end date.
+  --start-col, -s <number> Column number (1-based) containing the start date.
+  --end-col, -e <number>   Column number (1-based) containing the end date.
 
 Options:
-  --limit <number>     Maximum number of expanded rows per input row (default: 365).
-  --output <path>      Path for the output CSV file (default: output.csv).
-  --help               Show this help message.
+  --input, -i <path>     Path to the input CSV file (reads from stdin if omitted).
+  --output, -o <path>    Path for the output CSV file (writes to stdout if omitted).
+                         Output is always UTF-8 with BOM when writing to a file.
+  --limit, -l <number>   Maximum number of expanded rows per input row (default: 365).
+
+Flags:
+  --verbose, -v          Enable verbose logging to stderr.
+  --version, -V          Show version information.
+  --help, -h             Show this help message.
 `;
 
 async function main() {
+  let verbose = false; // Define verbose outside try block
   try {
     const parsedArgs = parseArgs(Deno.args, {
-      // Remove 'number' option, parse manually later
-      string: ["file", "output", "start-col", "end-col", "limit"],
-      boolean: ["help"],
+      string: ["input", "output", "start-col", "end-col", "limit"], // Changed file to input
+      boolean: ["help", "verbose", "version"], // Added verbose, version
       alias: {
         "h": "help",
-        "f": "file",
+        "i": "input", // Changed f to i
         "s": "start-col",
         "e": "end-col",
         "l": "limit",
         "o": "output",
+        "v": "verbose", // Added v
+        "V": "version", // Added V
       },
       default: {
         // Keep defaults as strings or numbers as appropriate for parsing
         limit: "365",
-        output: "output.csv",
+        // Removed output default
         help: false,
+        verbose: false, // Added verbose default
+        version: false, // Added version default
       },
     });
 
     // Destructure args
-    const { file, output, help } = parsedArgs;
-    const startColStr = parsedArgs["start-col"]; // Access using string key
+    const { input, output, help, version } = parsedArgs; // verbose is already defined
+    verbose = parsedArgs.verbose; // Assign value here
+    const startColStr = parsedArgs["start-col"];
     const endColStr = parsedArgs["end-col"];
     const limitStr = parsedArgs["limit"];
 
@@ -282,11 +304,19 @@ async function main() {
       Deno.exit(0);
     }
 
+    if (version) {
+      console.log(`csv-date-expander-cli v${VERSION}`);
+      Deno.exit(0);
+    }
+
     // --- Basic Validation ---
-    if (!file || startColStr === undefined || endColStr === undefined) { // Check string presence
-      console.error("Error: Missing required arguments.\n");
+    // Removed input check from here, it's optional now
+    if (startColStr === undefined || endColStr === undefined) {
+      console.error(
+        "Error: Missing required arguments (--start-col, --end-col).\n",
+      );
       console.error(HELP_MESSAGE);
-      Deno.exit(1);
+      Deno.exit(1); // Exit code 1 for argument errors
     }
 
     // --- Parse and Validate Numeric Arguments ---
@@ -298,43 +328,84 @@ async function main() {
       console.error(
         `Error: --start-col must be a positive integer. Received: ${startColStr}`,
       );
-      console.error(HELP_MESSAGE);
       Deno.exit(1);
     }
     if (isNaN(endCol) || endCol <= 0) {
       console.error(
         `Error: --end-col must be a positive integer. Received: ${endColStr}`,
       );
-      console.error(HELP_MESSAGE);
       Deno.exit(1);
     }
     if (isNaN(limit) || limit <= 0) {
       console.error(
         `Error: --limit must be a positive integer. Received: ${limitStr}`,
       );
-      console.error(HELP_MESSAGE);
       Deno.exit(1);
     }
 
-    // --- File Reading and Parsing ---
-    console.log(`Reading file: ${file}...`);
-    const fileContentUint8Array = await Deno.readFile(file);
-    console.log("Decoding file content...");
-    const csvText = decodeCsvText(fileContentUint8Array);
-    console.log("Parsing CSV data...");
+    // --- Input Reading ---
+    let csvText: string;
+    if (input) {
+      if (verbose) console.error(`Reading file: ${input}...`); // Log to stderr if verbose
+      try {
+        const fileContentUint8Array = await Deno.readFile(input);
+        if (verbose) console.error("Decoding file content...");
+        csvText = decodeCsvText(fileContentUint8Array, verbose); // Pass verbose flag
+      } catch (readError) {
+        console.error(`\nError reading input file: ${input}`);
+        if (readError instanceof Error) {
+          if (readError.name === "NotFound") {
+            console.error(`  File not found.`);
+          } else if (readError.name === "PermissionDenied") {
+            console.error(`  Permission denied.`);
+          } else {
+            console.error(`  ${readError.message}`);
+          }
+        } else {
+          console.error(`  An unexpected error occurred: ${readError}`);
+        }
+        Deno.exit(2); // Exit code 2 for I/O errors
+      }
+    } else {
+      if (verbose) console.error("Reading from standard input...");
+      try {
+        const stdinContentUint8Array = await readAll(Deno.stdin); // Use imported readAll
+        if (stdinContentUint8Array.length === 0) {
+          console.error("Error: Standard input is empty.");
+          Deno.exit(1); // Exit code 1 for Argument/Usage error
+        }
+        if (verbose) console.error("Decoding stdin content...");
+        csvText = decodeCsvText(stdinContentUint8Array, verbose); // Pass verbose flag
+      } catch (stdinError) {
+        console.error(`\nError reading from standard input:`);
+        console.error(
+          stdinError instanceof Error
+            ? `  ${stdinError.message}`
+            : `  ${stdinError}`,
+        );
+        Deno.exit(2); // Exit code 2 for I/O error
+      }
+    }
+
+    // --- CSV Parsing ---
+    if (verbose) console.error("Parsing CSV data...");
     const parsedData = parseCSV(csvText);
 
     if (!parsedData || parsedData.length === 0) {
-      console.error("Error: CSV file is empty or could not be parsed.");
-      Deno.exit(1);
+      console.error(
+        "Error: Input data is empty or could not be parsed as CSV.",
+      );
+      Deno.exit(3); // Exit code 3 for processing errors
     }
 
     const header = parsedData[0];
     const dataRows = parsedData.slice(1);
 
-    console.log(
-      `CSV Parsed: ${header.length} columns, ${dataRows.length} data rows.`,
-    );
+    if (verbose) {
+      console.error(
+        `CSV Parsed: ${header.length} columns, ${dataRows.length} data rows.`,
+      );
+    }
 
     // --- Further Validation (Column Indices) ---
     const startDateColIndex = startCol - 1; // Convert 1-based to 0-based
@@ -359,17 +430,21 @@ async function main() {
       Deno.exit(1);
     }
 
-    console.log("Arguments and CSV parsed successfully:");
-    console.log(`  Input File: ${file}`);
-    console.log(
-      `  Start Column: ${startCol} (Name: ${header[startDateColIndex]})`,
-    );
-    console.log(`  End Column: ${endCol} (Name: ${header[endDateColIndex]})`);
-    console.log(`  Limit: ${limit}`);
-    console.log(`  Output File: ${output}`);
+    if (verbose) {
+      console.error("\nArguments and CSV parsed successfully:");
+      console.error(`  Input Source: ${input ? input : "stdin"}`);
+      console.error(
+        `  Start Column: ${startCol} (Name: ${header[startDateColIndex]})`,
+      );
+      console.error(
+        `  End Column: ${endCol} (Name: ${header[endDateColIndex]})`,
+      );
+      console.error(`  Limit: ${limit}`);
+      console.error(`  Output Target: ${output ? output : "stdout"}`);
+    }
 
     // --- Date Expansion Logic ---
-    console.log("\nProcessing data rows...");
+    if (verbose) console.error("\nProcessing data rows...");
     const { processedRows, warningsSummary, detailedWarnings } =
       processDataRows(
         dataRows,
@@ -379,80 +454,100 @@ async function main() {
         limit,
       );
 
-    console.log(`Processing complete. ${processedRows.length} rows generated.`);
-
-    // --- Display Warnings ---
-    if (warningsSummary.length > 0) {
-      console.warn("\nWarnings encountered during processing:");
-      warningsSummary.forEach((w) => {
-        console.warn(`  - ${w.type}: ${w.count}行`);
-      });
-
-      console.warn("\nDetailed Warnings:");
-      detailedWarnings.forEach((dw) => {
-        console.warn(`  - 行 ${dw.rowNumber}: [${dw.type}] ${dw.message}`);
-      });
-    } else {
-      console.log("No warnings encountered.");
+    if (verbose) {
+      console.error(
+        `Processing complete. ${processedRows.length} rows generated.`,
+      );
     }
 
-    // --- CSV Writing Logic ---
+    // --- Display Warnings (to stderr) ---
+    if (warningsSummary.length > 0) {
+      console.error("\nWarnings encountered during processing:"); // Use console.error for warnings
+      warningsSummary.forEach((w) => {
+        console.error(`  - ${w.type}: ${w.count}行`);
+      });
+
+      console.error("\nDetailed Warnings:");
+      detailedWarnings.forEach((dw) => {
+        console.error(`  - 行 ${dw.rowNumber}: [${dw.type}] ${dw.message}`);
+      });
+    } else {
+      if (verbose) console.error("No warnings encountered.");
+    }
+
+    // --- Output Writing Logic ---
     if (processedRows.length > 0) {
-      console.log(`\nGenerating CSV content for output file: ${output}...`);
+      if (verbose) console.error(`\nGenerating CSV content...`);
       const newHeader = ["EXPANDDATE", ...header];
       const outputCsvString = generateCSV(newHeader, processedRows);
 
-      try {
-        console.log(`Writing CSV to ${output}...`);
-        // Remove the unsupported 'encoding' option
-        await Deno.writeTextFile(output, outputCsvString);
-        console.log(
-          `Successfully wrote ${processedRows.length} expanded rows to ${output}`,
-        );
-      } catch (writeError) {
-        console.error(`\nError writing output file to ${output}:`);
-        if (writeError instanceof Error) {
-          if (writeError.name === "PermissionDenied") {
+      if (output) {
+        // Write to file
+        if (verbose) console.error(`Writing CSV to file: ${output}...`);
+        try {
+          // Add UTF-8 BOM before writing
+          const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+          const dataBytes = new TextEncoder().encode(outputCsvString);
+          const outputBuffer = new Uint8Array(bom.length + dataBytes.length);
+          outputBuffer.set(bom, 0);
+          outputBuffer.set(dataBytes, bom.length);
+
+          await Deno.writeFile(output, outputBuffer); // Use writeFile for binary data
+          if (verbose) {
             console.error(
-              `  Permission denied to write file: ${output}`,
+              `Successfully wrote ${processedRows.length} expanded rows to ${output}`,
             );
-          } else {
-            console.error(`  ${writeError.message}`);
           }
-        } else {
-          console.error(`  An unexpected error occurred: ${writeError}`);
+        } catch (writeError) {
+          console.error(`\nError writing output file to ${output}:`);
+          if (writeError instanceof Error) {
+            if (writeError.name === "PermissionDenied") {
+              console.error(`  Permission denied.`);
+            } else {
+              console.error(`  ${writeError.message}`);
+            }
+          } else {
+            console.error(`  An unexpected error occurred: ${writeError}`);
+          }
+          Deno.exit(2); // Exit code 2 for I/O error
         }
-        Deno.exit(1); // Exit if writing fails
+      } else {
+        // Write to standard output
+        if (verbose) console.error("Writing CSV to standard output...");
+        try {
+          // No BOM for stdout
+          await Deno.stdout.write(new TextEncoder().encode(outputCsvString));
+        } catch (stdoutError) {
+          console.error(`\nError writing to standard output:`);
+          console.error(
+            stdoutError instanceof Error
+              ? `  ${stdoutError.message}`
+              : `  ${stdoutError}`,
+          );
+          // Don't exit here, maybe the pipe broke, but processing was ok
+          // Deno.exit(2); // I/O error - Decided against exiting here
+          if (verbose) {
+            console.error(
+              "Standard output write may have failed (e.g., broken pipe).",
+            );
+          }
+        }
       }
     } else {
-      console.log("\nNo data to write to output file.");
+      if (verbose) console.error("\nNo data to write to output.");
     }
 
-    console.log("\nCLI execution finished.");
+    if (verbose) console.error("\nCLI execution finished successfully.");
   } catch (error) {
-    console.error("\n--- An error occurred during execution ---");
-    if (error instanceof Error) {
-      // Handle specific Deno errors more gracefully
-      if (error.name === "NotFound") {
-        console.error(
-          `Error: Input file not found. Path: ${error.message.split('"')[1]}`, // Attempt to extract path
-        );
-      } else if (error.name === "PermissionDenied") {
-        console.error(
-          `Error: Permission denied to read file. Path: ${
-            error.message.split('"')[1]
-          }`, // Attempt to extract path
-        );
-      } else {
-        console.error(`Error: ${error.message}`);
-        // Optionally print stack trace for unexpected errors
-        // console.error(error.stack);
-      }
-    } else {
-      console.error(`An unexpected error occurred: ${error}`);
+    // General error catching - already handled specific errors with exit codes
+    console.error("\n--- An unexpected error occurred during execution ---");
+    console.error(error instanceof Error ? error.message : error);
+    // Accessing verbose here is now safe
+    if (verbose && error instanceof Error && error.stack) {
+      console.error(error.stack); // Print stack trace if verbose
     }
-    // Avoid printing help message for file/processing errors
-    Deno.exit(1);
+    // Use a generic error code if not already exited
+    Deno.exit(1); // Exit code 1 for Generic error
   }
 }
 
