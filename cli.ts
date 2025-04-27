@@ -27,38 +27,41 @@ interface DetailedWarning {
  * @returns The decoded CSV text string.
  * @throws Error if decoding fails.
  */
-function decodeCsvText(buffer: Uint8Array): string {
+function decodeCsvText(buffer: Uint8Array, isVerbose: boolean): string { // Add isVerbose parameter
   try {
     // Check for UTF-8 BOM (EF BB BF)
     const bom = buffer.slice(0, 3);
     if (bom[0] === 0xEF && bom[1] === 0xBB && bom[2] === 0xBF) {
-      console.log("Decoding as UTF-8 (BOM detected)");
+      if (isVerbose) console.error("Decoding as UTF-8 (BOM detected)"); // Log to stderr if verbose
       return new TextDecoder("utf-8").decode(buffer.slice(3));
     } else {
-      // No BOM detected, try Shift_JIS first
+      // No BOM detected, try UTF-8 first (more common)
       try {
-        console.log("Attempting to decode as Shift_JIS");
-        const decoded = new TextDecoder("shift_jis", { fatal: true }).decode(
+        if (isVerbose) console.error("Attempting to decode as UTF-8 (no BOM)");
+        const decoded = new TextDecoder("utf-8", { fatal: true }).decode(
           buffer,
         );
-        console.log("Successfully decoded as Shift_JIS");
+        if (isVerbose) console.error("Successfully decoded as UTF-8 (no BOM)");
         return decoded;
-      } catch (shiftJisError) {
-        // If Shift_JIS fails, try UTF-8 (could be BOM-less UTF-8)
-        console.warn(
-          "Shift_JIS decoding failed, attempting UTF-8 (no BOM)",
-          shiftJisError,
-        );
+      } catch (utf8Error) {
+        // If UTF-8 fails, try Shift_JIS
+        if (isVerbose) {
+          console.error(
+            "UTF-8 (no BOM) decoding failed, attempting Shift_JIS",
+            // utf8Error // Optionally log the error details if verbose
+          );
+        }
         try {
-          const decoded = new TextDecoder("utf-8", { fatal: true }).decode(
+          if (isVerbose) console.error("Attempting to decode as Shift_JIS");
+          const decoded = new TextDecoder("shift_jis", { fatal: true }).decode(
             buffer,
           );
-          console.log("Successfully decoded as UTF-8 (no BOM)");
+          if (isVerbose) console.error("Successfully decoded as Shift_JIS");
           return decoded;
-        } catch (utf8Error) {
-          console.error(
-            "Failed to decode as both Shift_JIS and UTF-8.",
-            utf8Error,
+        } catch (shiftJisError) {
+          console.error( // Always log the final failure
+            "Failed to decode as both UTF-8 (no BOM) and Shift_JIS.",
+            // shiftJisError // Optionally log the error details
           );
           throw new Error(
             "ファイルの文字コードを自動判別できませんでした。ファイルが UTF-8 または Shift_JIS 形式であることを確認してください。",
@@ -347,7 +350,7 @@ async function main() {
       try {
         const fileContentUint8Array = await Deno.readFile(input);
         if (verbose) console.error("Decoding file content...");
-        csvText = decodeCsvText(fileContentUint8Array);
+        csvText = decodeCsvText(fileContentUint8Array, verbose); // Pass verbose flag
       } catch (readError) {
         console.error(`\nError reading input file: ${input}`);
         if (readError instanceof Error) {
@@ -372,7 +375,7 @@ async function main() {
           Deno.exit(1); // Exit code 1 for Argument/Usage error
         }
         if (verbose) console.error("Decoding stdin content...");
-        csvText = decodeCsvText(stdinContentUint8Array);
+        csvText = decodeCsvText(stdinContentUint8Array, verbose); // Pass verbose flag
       } catch (stdinError) {
         console.error(`\nError reading from standard input:`);
         console.error(
