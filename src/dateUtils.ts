@@ -69,7 +69,7 @@ export function parseDate(dateString: string | null | undefined): Date | null {
       }
       return utcDate;
     }
-  } catch (e) {
+  } catch (_e) {
     // Ignore errors from fallback constructor
   }
 

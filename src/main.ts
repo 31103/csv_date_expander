@@ -111,7 +111,7 @@ async function updateSelectedFile(file: File | null): Promise<void> {
  * Reads and processes the given CSV file.
  * @param file The CSV file to process.
  */
-async function processFile(file: File): Promise<void> {
+function processFile(_file: File): void { // Removed async, added underscore to unused file
   // 1. Reset UI state (specific to processing start)
   clearError();
   clearStatus();
@@ -348,7 +348,7 @@ function decodeCsvText(arrayBuffer: ArrayBuffer): string {
  */
 function processDataRows(
   originalDataRows: string[][],
-  originalHeader: string[], // Added for context in warnings if needed later
+  _originalHeader: string[], // Added for context in warnings if needed later
   startDateColIndex: number,
   endDateColIndex: number,
   maxDaysLimit: number,
@@ -417,10 +417,10 @@ function processDataRows(
       (1000 * 60 * 60 * 24);
     const totalDaysToExpand = dayDifference + 1;
 
-    let currentDate = new Date(startDate.getTime());
+    const currentDate = new Date(startDate.getTime());
     const finalEndDate = new Date(endDate.getTime());
     let expandedCount = 0;
-    let truncated = false;
+    let _truncated = false; // Renamed unused variable
     let loopCount = 0;
     const maxLoops = Math.max(totalDaysToExpand + 10, maxDaysLimit + 10);
 
@@ -441,7 +441,7 @@ function processDataRows(
       currentDate.getTime() <= finalEndDate.getTime() &&
       loopCount < maxLoops
     ) {
-      truncated = true;
+      _truncated = true;
       truncationRowCount++;
       detailedWarnings.push({
         rowNumber: rowNumberForError,

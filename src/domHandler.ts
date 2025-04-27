@@ -88,7 +88,7 @@ export function populateColumnSelectors(columns: string[]): void {
   endDateColSelect.innerHTML = '<option value="">終了日の列を選択</option>';
 
   if (columns && columns.length > 0) {
-    columns.forEach((colName, index) => {
+    columns.forEach((colName, _index) => {
       // Use column name as value, or index if name is empty/duplicate?
       // For simplicity, let's use the column name as value for now.
       // Need to handle potential duplicate column names later if necessary.

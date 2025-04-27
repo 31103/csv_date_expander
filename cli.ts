@@ -43,7 +43,7 @@ function decodeCsvText(buffer: Uint8Array, isVerbose: boolean): string { // Add 
         );
         if (isVerbose) console.error("Successfully decoded as UTF-8 (no BOM)");
         return decoded;
-      } catch (utf8Error) {
+      } catch (_utf8Error) {
         // If UTF-8 fails, try Shift_JIS
         if (isVerbose) {
           console.error(
@@ -58,7 +58,7 @@ function decodeCsvText(buffer: Uint8Array, isVerbose: boolean): string { // Add 
           );
           if (isVerbose) console.error("Successfully decoded as Shift_JIS");
           return decoded;
-        } catch (shiftJisError) {
+        } catch (_shiftJisError) {
           console.error( // Always log the final failure
             "Failed to decode as both UTF-8 (no BOM) and Shift_JIS.",
             // shiftJisError // Optionally log the error details
@@ -91,7 +91,7 @@ function decodeCsvText(buffer: Uint8Array, isVerbose: boolean): string { // Add 
  */
 function processDataRows(
   originalDataRows: string[][],
-  originalHeader: string[], // Kept for context in warnings
+  _originalHeader: string[], // Kept for context in warnings
   startDateColIndex: number,
   endDateColIndex: number,
   maxDaysLimit: number,
@@ -162,7 +162,7 @@ function processDataRows(
       (1000 * 60 * 60 * 24);
     const totalDaysToExpand = dayDifference + 1;
 
-    let currentDate = new Date(startDate.getTime());
+    const currentDate = new Date(startDate.getTime());
     const finalEndDate = new Date(endDate.getTime());
     let expandedCount = 0;
     let loopCount = 0;
